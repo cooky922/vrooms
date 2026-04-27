@@ -1,2 +1,5 @@
 # TODO
-yes
+- Add group members
+- Consult professor
+- UI Design
+  
