@@ -5,7 +5,7 @@ TODO
 TODO
 
 # Project To-Do List
-- [ ] Finalize ER Diagram, Mapping Schema, Data Dictionary, and SQL DDl
+- [ ] Finalize ER Diagram, Mapping Schema, Data Dictionary, and SQL DDL
 - [ ] Start Frontend
 - [ ] Start Backend
   
