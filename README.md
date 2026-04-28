@@ -1,5 +1,9 @@
 # TODO List
-- Add group members
 - Consult professor
-- UI Design
+- Front End: UI Design
+- Back End: Database
   
+# Group Members
+- @cooky922
+- @franciscrisgerondio-a11y
+- @paulinefernan0901-dotcom
