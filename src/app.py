@@ -3,12 +3,14 @@ import os
 import sys
 from pathlib import Path
 from PyQt6.QtCore import QUrl
+from PyQt6.QtGui import QIcon
 from PyQt6.QtQml import QQmlApplicationEngine
 from PyQt6.QtWidgets import QApplication
 
 class App(QApplication):
     windows_app_id = 'ccc151.vrooms.desktop_app.0_1'
     app_qml_file_path = str(Path(__file__).parent.parent / 'src' / 'view' / 'MainWindow.qml')
+    app_icon_file_path = str(Path(__file__).parent.parent / 'assets' / 'icons' / 'app-logo.svg')
 
     def __init__(self):
         # TODO: Load Database First
@@ -29,6 +31,7 @@ class App(QApplication):
         # TODO: Load Fonts
 
         # TODO: Set Window Icon
+        self.setWindowIcon(QIcon(App.app_icon_file_path))
 
         # TODO: Creating context objects
 
