@@ -7,6 +7,8 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtQml import QQmlApplicationEngine
 from PyQt6.QtWidgets import QApplication
 
+from src.view.theme import FontLoader, QMLAppTheme
+
 class App(QApplication):
     windows_app_id = 'ccc151.vrooms.desktop_app.0_1'
     app_qml_file_path = str(Path(__file__).parent.parent / 'src' / 'view' / 'MainWindow.qml')
@@ -28,15 +30,18 @@ class App(QApplication):
         self.engine = QQmlApplicationEngine()
         self.engine.warnings.connect(App.warningHandler)
 
-        # TODO: Load Fonts
+        # Load Fonts
+        FontLoader.initialize()
 
-        # TODO: Set Window Icon
+        # Set Window Icon
         self.setWindowIcon(QIcon(App.app_icon_file_path))
 
-        # TODO: Creating context objects
+        # Creating context objects
+        self.appTheme = QMLAppTheme(self)
 
-        # TODO: Prepare QML context properties and load file
+        # Prepare QML context properties and load file
         context = self.engine.rootContext()
+        context.setContextProperty('appTheme', self.appTheme)
         self.engine.load(QUrl.fromLocalFile(App.app_qml_file_path))
 
         # Return early if invalid (ex: QML errors)

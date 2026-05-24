@@ -20,6 +20,7 @@ ApplicationWindow {
             text: "VroomS!"
             anchors.centerIn: parent
             font.pixelSize: 24
+            font.family: appTheme.rokkittFontName
             color: "#333333"
         }
     }
