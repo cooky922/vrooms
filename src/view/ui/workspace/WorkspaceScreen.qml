@@ -7,7 +7,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        color: "#f0f0f0"
+        color: "#FAFAFA"
 
         ColumnLayout {
             anchors.centerIn: parent

@@ -5,19 +5,22 @@ import QtQuick.Effects
 Button {
     id: root
     
-    property color buttonColor: appTheme.activeDarkColor
+    property color buttonColor: "#ECECEC"
     property int textSize: 12
-    property color textColor: "#FFFFFF"
+    property color textColor: "black"
     
     property string iconSource: ""
     property string iconPosition: "left"
     property int letterSpacing: 0
     property bool enableAnimate: false
 
-    padding: 10
+    leftPadding: 10
+    rightPadding: 10
+    topPadding: 5
+    bottomPadding: 5
 
     background: Rectangle {
-        radius: 6
+        radius: root.height / 2
         border.width: 0
         
         color: {
@@ -70,7 +73,7 @@ Button {
                 color: root.textColor
                 font.pixelSize: textSize
                 font.bold: true
-                font.family: appTheme.rethinkSansFontName
+                font.family: appTheme.inclusiveSansFontName
                 font.letterSpacing: root.letterSpacing
 
                 anchors.verticalCenter: parent.verticalCenter

@@ -27,8 +27,8 @@ Button {
             
             color: {
                 if (!root.enabled) return "#D7D7D7"
-                if (root.down) return Qt.darker(root.buttonColor, 1.2)
-                if (root.hovered) return Qt.darker(root.buttonColor, 1.1)
+                if (root.down) return Qt.darker(root.buttonColor, 1.1)
+                if (root.hovered) return Qt.darker(root.buttonColor, 1.05)
                 return root.buttonColor
             }
 
@@ -90,7 +90,7 @@ Button {
                 font.pixelSize: textSize
                 
                 font.weight: Font.Medium 
-                font.family: appTheme.rethinkSansFontName
+                font.family: appTheme.inclusiveSansFontName
                 font.letterSpacing: root.letterSpacing
 
                 anchors.verticalCenter: parent.verticalCenter

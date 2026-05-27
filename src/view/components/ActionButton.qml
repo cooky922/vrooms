@@ -72,7 +72,7 @@ Button {
                 color: root.textColor
                 font.pixelSize: textSize
                 font.bold: true
-                font.family: appTheme.rethinkSansFontName
+                font.family: appTheme.inclusiveSansFontName
                 font.letterSpacing: root.letterSpacing
 
                 anchors.verticalCenter: parent.verticalCenter
