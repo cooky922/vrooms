@@ -49,7 +49,43 @@ Item {
                         enableAnimate: true
                     }
 
-                    // >> navigation group (TODO)
+                    // >> navigation group
+                    Components.NavGroup {
+                        Layout.fillWidth: true 
+                        Layout.topMargin: 12
+
+                        Components.NavItem {
+                            text: "Dashboard"
+                            iconName: "dashboard"
+                            checked: true
+                        }
+
+                        Components.NavItem {
+                            text: "Units"
+                            iconName: "unit"
+                        }
+
+                        Components.NavItem {
+                            text: "Customers"
+                            iconName: "customer"
+                        }
+
+                        Components.NavItem {
+                            text: "Rents"
+                            iconName: "rent"
+                        }
+
+                        Components.NavItem {
+                            text: "Payments"
+                            iconName: "payment"
+                        }
+
+                        Components.NavItem {
+                            text: "Liabilities"
+                            iconName: "liability"
+                        }
+                    }
+
                     Item {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
@@ -98,7 +134,7 @@ Item {
                         }
                     }
 
-                    // >> main content area
+                    // >> main content area (TODO)
                     Rectangle {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
