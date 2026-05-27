@@ -8,6 +8,7 @@ from PyQt6.QtQml import QQmlApplicationEngine
 from PyQt6.QtWidgets import QApplication
 
 from src.view.theme import FontLoader, QMLAppTheme
+from src.utils import QMLUtils
 
 class App(QApplication):
     windows_app_id = 'ccc151.vrooms.desktop_app.0_1'
@@ -38,10 +39,12 @@ class App(QApplication):
 
         # Creating context objects
         self.appTheme = QMLAppTheme(self)
+        self.appUtils= QMLUtils(self)
 
         # Prepare QML context properties and load file
         context = self.engine.rootContext()
         context.setContextProperty('appTheme', self.appTheme)
+        context.setContextProperty('appUtils', self.appUtils)
         self.engine.load(QUrl.fromLocalFile(App.app_qml_file_path))
 
         # Return early if invalid (ex: QML errors)

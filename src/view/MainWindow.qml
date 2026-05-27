@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "ui/login" as LoginUI
 
 ApplicationWindow {
     id: app
@@ -12,6 +13,35 @@ ApplicationWindow {
     visible: true
     title: "VroomS - Motor Rental Management System"
 
+    StackView {
+        id: stack
+        anchors.fill: parent
+
+        pushEnter:  Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 240; easing.type: Easing.OutQuad } }
+        pushExit:   Transition { NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 160; easing.type: Easing.InQuad } }
+        popEnter:   Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 240; easing.type: Easing.OutQuad } }
+        popExit:    Transition { NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 160; easing.type: Easing.InQuad } }
+
+        initialItem: loginComponent
+    }
+
+    Component {
+        id: loginComponent
+        LoginUI.LoginScreen {
+            /*
+            onEnterClicked: stack.push(workspaceComponent)
+            */
+        }
+    }
+
+    /*
+    Component {
+        id: workspaceComponent
+        WorkspaceScreen {}
+    }
+    */
+
+    /*
     Rectangle {
         anchors.fill: parent
         color: "#f0f0f0"
@@ -24,4 +54,5 @@ ApplicationWindow {
             color: "#333333"
         }
     }
+    */
 }

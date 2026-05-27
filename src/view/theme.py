@@ -126,6 +126,12 @@ class QMLAppTheme(QObject):
     def darkTextColor(self): return Theme.DARK_TEXT_COLOR
 
     @pyqtProperty(str)
+    def activeColor(self): return Theme.ACTIVE_COLOR
+
+    @pyqtProperty(str)
+    def activeDarkColor(self): return Theme.ACTIVE_DARK_COLOR
+
+    @pyqtProperty(str)
     def rokkittFontName(self): return Theme.ROKKITT_FONT_NAME
 
     @pyqtProperty(str)
