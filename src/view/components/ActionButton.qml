@@ -9,7 +9,7 @@ Button {
     property color textColor: "white"
     property bool bordered: false
 
-    property string iconSource: ""
+    property string iconName: ""
     property string iconPosition: "left"
 
     property int letterSpacing: 0
@@ -17,6 +17,7 @@ Button {
     property bool enableAnimate: false
 
     default property alias buttonContent: root.data
+    readonly property string _iconSourceDirectory: "../../../assets/icons/"
 
     padding: 10
 
@@ -39,21 +40,21 @@ Button {
         Row {
             id: contentRow
             anchors.centerIn: parent
-            spacing: root.iconSource !== "" ? 8 : 0
+            spacing: root.iconName !== "" ? 8 : 0
             layoutDirection: root.iconPosition === "right" ? Qt.RightToLeft : Qt.LeftToRight
 
             Item {
-                width: root.iconSource !== "" ? textSize * 1.1 : 0
-                height: root.iconSource !== "" ? textSize * 1.1 : 0
+                width: root.iconName !== "" ? textSize * 1.5 : 0
+                height: root.iconName !== "" ? textSize * 1.5 : 0
                 anchors.verticalCenter: parent.verticalCenter
-                visible: root.iconSource !== ""
+                visible: root.iconName !== ""
                 opacity: root.enabled ? 1.0 : 0.6
 
                 Image {
                     id: buttonIcon
-                    source: root.iconSource
-                    sourceSize.width: textSize * 1.1
-                    sourceSize.height: textSize * 1.1
+                    source: root.iconName === "" ? "" : root._iconSourceDirectory + root.iconName + ".svg"
+                    sourceSize.width: textSize * 1.5
+                    sourceSize.height: textSize * 1.5
                     anchors.fill: parent
                     visible: false
                 }

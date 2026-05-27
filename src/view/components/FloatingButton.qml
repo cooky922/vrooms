@@ -9,14 +9,15 @@ Button {
     property int textSize: 12
     property color textColor: "#000000"
     
-    property string iconSource: ""
+    property string iconName: ""
     property string iconPosition: "left"
     property int letterSpacing: 0
     property bool enableAnimate: false
 
-    padding: 10
-    leftPadding: 20
-    rightPadding: 20
+    readonly property string _iconSourceDirectory: "../../../assets/icons/"
+    padding: 15
+    // leftPadding: 20
+    // rightPadding: 20
 
     background: Item {
         Rectangle {
@@ -56,19 +57,19 @@ Button {
         Row {
             id: contentRow
             anchors.centerIn: parent
-            spacing: root.iconSource !== "" ? 12 : 0
+            spacing: root.iconName !== "" ? 12 : 0
             layoutDirection: root.iconPosition === "right" ? Qt.RightToLeft : Qt.LeftToRight
 
             Item {
-                width: root.iconSource !== "" ? textSize * 1.2 : 0
-                height: root.iconSource !== "" ? textSize * 1.2 : 0
+                width: root.iconName !== "" ? textSize * 1.2 : 0
+                height: root.iconName !== "" ? textSize * 1.2 : 0
                 anchors.verticalCenter: parent.verticalCenter
-                visible: root.iconSource !== ""
+                visible: root.iconName !== ""
                 opacity: root.enabled ? 1.0 : 0.5
 
                 Image {
                     id: buttonIcon
-                    source: root.iconSource
+                    source: root.iconName === "" ? "" : root._iconSourceDirectory + root.iconName + ".svg"
                     sourceSize.width: textSize * 1.2
                     sourceSize.height: textSize * 1.2
                     anchors.fill: parent
