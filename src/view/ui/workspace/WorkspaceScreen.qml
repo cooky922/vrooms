@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import "../../components" as Components
 
@@ -45,6 +46,7 @@ Item {
                         text: "New"
                         iconName: "add"
                         Layout.preferredWidth: implicitWidth 
+                        enableAnimate: true
                     }
 
                     // >> navigation group (TODO)
@@ -78,6 +80,21 @@ Item {
                             text: "User"
                             textSize: 13
                             iconName: "account"
+                            enableAnimate: true
+
+                            onClicked: userMenu.open()
+
+                            Components.ContextMenu {
+                                id: userMenu
+                                y: parent.height + 4
+                                x: parent.width - width
+
+                                Components.ContextMenuItem {
+                                    text: "Logout"
+                                    iconName: "logout"
+                                    onTriggered: stack.pop() // > go back to login screen
+                                }
+                            }
                         }
                     }
 
@@ -107,44 +124,5 @@ Item {
                 }
             }
         }
-
-        /*
-        ColumnLayout {
-            anchors.centerIn: parent
-            spacing: 20
-
-            Text {
-                Layout.alignment: Qt.AlignHCenter
-                text: "VroomS!"
-                font.pixelSize: 24
-                font.family: appTheme.rokkittFontName
-                color: "#333333"
-            }
-
-            Components.PrimaryButton {
-                text: "Go to Login"
-                iconName: "add"
-                Layout.alignment: Qt.AlignHCenter
-                enableAnimate: true
-                onClicked: stack.pop()
-            }
-
-            Components.SecondaryButton {
-                text: "Go to Login"
-                Layout.alignment: Qt.AlignHCenter
-                enableAnimate: true
-                onClicked: stack.pop()
-            }
-
-            Components.FloatingButton {
-                text: "Go to Login"
-                Layout.alignment: Qt.AlignHCenter
-                enableAnimate: true
-                onClicked: stack.pop()
-            }
-
-        }
-        */
-
     }
 }
