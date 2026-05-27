@@ -21,6 +21,17 @@ class QMLUtils(QObject):
         else:
             return color
 
+    @pyqtSlot(str, float, result = str)
+    def colorWithAlpha(self, color, alpha_float):
+        qcolor = QColor(color)
+        
+        # convert the float (0.0 - 1.0) to an integer (0 - 255)
+        alpha_int = max(0, min(255, int(alpha_float * 255)))
+        qcolor.setAlpha(alpha_int)
+        
+        # return in #AARRGGBB format which QML reads natively
+        return qcolor.name(QColor.NameFormat.HexArgb)
+
     @pyqtSlot(str, result = str)
     def prettifyColumnName(self, name):
         return name.replace('_', ' ').title()
