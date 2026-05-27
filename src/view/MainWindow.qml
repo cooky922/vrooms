@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "ui/login" as LoginUI
+import "ui/workspace" as WorkspaceUI
 
 ApplicationWindow {
     id: app
@@ -28,31 +29,12 @@ ApplicationWindow {
     Component {
         id: loginComponent
         LoginUI.LoginScreen {
-            /*
             onEnterClicked: stack.push(workspaceComponent)
-            */
         }
     }
 
-    /*
     Component {
         id: workspaceComponent
-        WorkspaceScreen {}
+        WorkspaceUI.WorkspaceScreen {}
     }
-    */
-
-    /*
-    Rectangle {
-        anchors.fill: parent
-        color: "#f0f0f0"
-
-        Text {
-            text: "VroomS!"
-            anchors.centerIn: parent
-            font.pixelSize: 24
-            font.family: appTheme.rokkittFontName
-            color: "#333333"
-        }
-    }
-    */
 }
