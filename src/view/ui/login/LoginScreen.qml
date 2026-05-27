@@ -33,18 +33,9 @@ Item {
             spacing: 1
             Layout.alignment: Qt.AlignHCenter
 
-            Image {
+            Components.AppLogo {
                 id: mascot
-                
-                source: "../../../../assets/icons/app-logo-plain.svg"
-                
-                width: 60
-                height: 60
-                sourceSize.width: 60    
-                sourceSize.height: 60
-                
-                fillMode: Image.PreserveAspectFit
-
+                logoSize: 60
                 anchors.horizontalCenter: parent.horizontalCenter
             }
 
