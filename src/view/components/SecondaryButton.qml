@@ -5,7 +5,7 @@ import QtQuick.Effects
 Button {
     id: root
     
-    property color buttonColor: "#333333"
+    property color buttonColor: "#888888"
     property int textSize: 12
     property color textColor: buttonColor
     

@@ -77,7 +77,7 @@ Button {
     MouseArea {
         id: area
         anchors.fill: parent
-        cursorShape: control.checked ? Qt.ArrowCursor : Qt.PointingHandCursor
+        cursorShape: Qt.PointingHandCursor
         hoverEnabled: true
         acceptedButtons: Qt.NoButton
     }

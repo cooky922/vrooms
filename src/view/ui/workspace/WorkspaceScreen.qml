@@ -112,6 +112,19 @@ Item {
                             Layout.fillWidth: true 
                         }
 
+                        Components.ToggleButtonGroup {
+                            Components.ToggleButton {
+                                iconName: "table-view"
+                                checked: true
+                            }
+                            Components.ToggleButton {
+                                iconName: "list-view" 
+                            }
+                            Components.ToggleButton {
+                                iconName: "grid-view"
+                            }
+                        }
+
                         Components.PrimaryButton {
                             text: "User"
                             textSize: 13
