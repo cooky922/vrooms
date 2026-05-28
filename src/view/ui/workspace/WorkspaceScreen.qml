@@ -112,6 +112,18 @@ Item {
                             Layout.fillWidth: true 
                         }
 
+                        Components.DropdownChip {
+                            label: "Type"
+                            model: ["Documents", "Spreadsheets", "PDFs"]
+                            isSmall: true
+                        }
+
+                        Components.DropdownChip {
+                            label: "Status"
+                            model: ["All", "Active", "Inactive"]
+                            isSmall: true
+                        }
+
                         Components.ToggleButtonGroup {
                             Components.ToggleButton {
                                 iconName: "table-view"
