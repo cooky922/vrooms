@@ -44,7 +44,7 @@ Item {
 
     property real paddingPerSide: root.isSmall ? 8 : 12
     implicitWidth: contentRow.implicitWidth + (paddingPerSide * 2)
-    implicitHeight: root.isSmall ? 26 : 32
+    implicitHeight: root.isSmall ? 26 : 30
 
     property real rightSplitWidth: root.hasSelection ? (closeRow.implicitWidth + paddingPerSide) : 0
     Behavior on rightSplitWidth { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }

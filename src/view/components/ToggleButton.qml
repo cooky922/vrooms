@@ -31,7 +31,7 @@ Button {
     property int _contentW: _iconW + _textW + _spacing + 22
     
     implicitWidth: Math.max(32, _contentW + 12)
-    implicitHeight: parent ? parent.height : 30
+    implicitHeight: parent ? parent.height : 26
 
     // > background divider
     background: Item {
@@ -69,8 +69,8 @@ Button {
                 Image {
                     id: checkIcon
                     source: control._iconSourceDirectory + control.checkIconName + ".svg"
-                    sourceSize.width: 16
-                    sourceSize.height: 16
+                    sourceSize.width: 14
+                    sourceSize.height: 14
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
                     visible: false
@@ -97,8 +97,8 @@ Button {
                 Image {
                     id: mainIcon
                     source: control.iconName !== "" ? control._iconSourceDirectory + control.iconName + ".svg" : ""
-                    sourceSize.width: 18
-                    sourceSize.height: 18
+                    sourceSize.width: 14
+                    sourceSize.height: 14
                     anchors.fill: parent
                     visible: false
                 }

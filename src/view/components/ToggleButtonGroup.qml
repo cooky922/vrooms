@@ -7,7 +7,7 @@ Rectangle {
     property alias checkedButton: btnGroup.checkedButton
 
     implicitWidth: contentRow.implicitWidth + (Math.ceil(border.width) * 2)
-    implicitHeight: 30
+    implicitHeight: 26
 
     radius: height / 2
     color: "transparent"
@@ -73,6 +73,6 @@ Rectangle {
         id: contentRow
         anchors.fill: parent
         anchors.margins: Math.ceil(root.border.width)
-        spacing: 0 
+        spacing: 0
     }
 }

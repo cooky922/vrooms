@@ -107,10 +107,41 @@ Item {
                     // >> top bar
                     RowLayout {
                         Layout.fillWidth: true
+
+                        Components.SearchBar {
+                            Layout.preferredWidth: 300
+                            placeholderText: "Search ..."
+                        }
                         
                         Item {
                             Layout.fillWidth: true 
                         }
+
+                        Components.PrimaryButton {
+                            text: "User"
+                            textSize: 13
+                            iconName: "account"
+                            enableAnimate: true
+
+                            onClicked: userMenu.open()
+
+                            Components.ContextMenu {
+                                id: userMenu
+                                y: parent.height + 4 + (userMenu.slideOffset !== undefined ? userMenu.slideOffset : 0)
+                                x: parent.width - width
+
+                                Components.ContextMenuItem {
+                                    text: "Logout"
+                                    iconName: "logout"
+                                    onTriggered: stack.pop() // > go back to login screen
+                                }
+                            }
+                        }
+                    }
+
+                    // >> tool bar
+                    RowLayout {
+                        Layout.fillWidth: true
 
                         Components.DropdownChip {
                             label: "Type"
@@ -124,6 +155,10 @@ Item {
                             isSmall: true
                         }
 
+                        Item {
+                            Layout.fillWidth: true 
+                        }
+
                         Components.ToggleButtonGroup {
                             Components.ToggleButton {
                                 iconName: "table-view"
@@ -134,27 +169,6 @@ Item {
                             }
                             Components.ToggleButton {
                                 iconName: "grid-view"
-                            }
-                        }
-
-                        Components.PrimaryButton {
-                            text: "User"
-                            textSize: 13
-                            iconName: "account"
-                            enableAnimate: true
-
-                            onClicked: userMenu.open()
-
-                            Components.ContextMenu {
-                                id: userMenu
-                                y: parent.height + 4
-                                x: parent.width - width
-
-                                Components.ContextMenuItem {
-                                    text: "Logout"
-                                    iconName: "logout"
-                                    onTriggered: stack.pop() // > go back to login screen
-                                }
                             }
                         }
                     }
@@ -179,6 +193,7 @@ Item {
                         
                         Components.InfoText {
                             text: "To Be Added"
+                            textSize: 11
                             anchors.verticalCenter: parent.verticalCenter
                         }
                     }
