@@ -12,11 +12,33 @@ Item {
     // > gradient background
     Rectangle {
         anchors.fill: parent
+        
         gradient: Gradient {
             orientation: Gradient.Vertical
-            GradientStop { position: 0.0; color: appTheme.loginBgMainColor  }
-            GradientStop { position: 0.3; color: appTheme.loginBgMainLastColor}
-            GradientStop { position: 1.0; color: "white" }
+            GradientStop { id: stop1; position: 0.0; color: appTheme.loginBgMainColor  }
+            GradientStop { id: stop2; position: 0.3; color: appTheme.loginBgMainLastColor}
+            GradientStop { id: stop3; position: 1.0; color: "white" }
+        }
+
+        // > add subtle animation to the gradient
+        SequentialAnimation {
+            running: true
+            loops: Animation.Infinite
+
+            ParallelAnimation {
+                NumberAnimation { target: stop1; property: "position"; to: 0.35; duration: 3500; easing.type: Easing.InOutSine }
+                NumberAnimation { target: stop2; property: "position"; to: 0.85; duration: 3500; easing.type: Easing.InOutSine }
+            }
+
+            ParallelAnimation {
+                NumberAnimation { target: stop1; property: "position"; to: -0.25; duration: 3500; easing.type: Easing.InOutSine }
+                NumberAnimation { target: stop2; property: "position"; to: 0.10; duration: 3500; easing.type: Easing.InOutSine }
+            }
+            
+            ParallelAnimation {
+                NumberAnimation { target: stop1; property: "position"; to: 0.0; duration: 3500; easing.type: Easing.InOutSine }
+                NumberAnimation { target: stop2; property: "position"; to: 0.3; duration: 3500; easing.type: Easing.InOutSine }
+            }
         }
     }
 
