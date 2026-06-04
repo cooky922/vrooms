@@ -6,6 +6,8 @@ import "../../components" as Components
 Item {
     id: workspaceScreen
 
+    property string currentView: "Dashboard"
+
     Rectangle {
         anchors.fill: parent
         color: "#FAFAFA"
@@ -14,7 +16,7 @@ Item {
             anchors.fill: parent
             spacing: 0
 
-            // > navigation pane [left]
+            // > LEFT PANE: NAVIGATION
             Item {
                 Layout.preferredWidth: 150
                 Layout.fillHeight: true
@@ -43,10 +45,25 @@ Item {
 
                     // >> "new" button
                     Components.FloatingButton {
+                        id: newBtn
+                        property bool show: workspaceScreen.currentView !== "Dashboard"
+                        
                         text: "New"
                         iconName: "add"
-                        Layout.preferredWidth: implicitWidth 
                         enableAnimate: true
+                        
+                        enabled: show 
+                        Layout.preferredWidth: implicitWidth 
+                        Layout.preferredHeight: show ? implicitHeight : 0
+                        Layout.topMargin: show ? 0 : -12 
+                        
+                        opacity: show ? 1.0 : 0.0
+                        scale: show ? 1.0 : 0.5
+                        
+                        Behavior on Layout.preferredHeight { NumberAnimation { duration: 250; easing.type: Easing.InOutQuad } }
+                        Behavior on Layout.topMargin { NumberAnimation { duration: 250; easing.type: Easing.InOutQuad } }
+                        Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.InOutQuad } }
+                        Behavior on scale { NumberAnimation { duration: 300; easing.type: Easing.OutBack; easing.overshoot: 1.5 } }
                     }
 
                     // >> navigation group
@@ -58,31 +75,37 @@ Item {
                             text: "Dashboard"
                             iconName: "dashboard"
                             checked: true
+                            onClicked: workspaceScreen.currentView = "Dashboard"
                         }
 
                         Components.NavItem {
                             text: "Units"
                             iconName: "unit"
+                            onClicked: workspaceScreen.currentView = "Units"
                         }
 
                         Components.NavItem {
                             text: "Customers"
                             iconName: "customer"
+                            onClicked: workspaceScreen.currentView = "Customers"
                         }
 
                         Components.NavItem {
                             text: "Rents"
                             iconName: "rent"
+                            onClicked: workspaceScreen.currentView = "Rents"
                         }
 
                         Components.NavItem {
                             text: "Payments"
                             iconName: "payment"
+                            onClicked: workspaceScreen.currentView = "Payments"
                         }
 
                         Components.NavItem {
                             text: "Liabilities"
                             iconName: "liability"
+                            onClicked: workspaceScreen.currentView = "Liabilities"
                         }
                     }
 
@@ -93,109 +116,32 @@ Item {
                 }
             }
 
-            // > content pane [right]
+            // > RIGHT PANE: CONTENT AREA
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-
-                ColumnLayout {
+                
+                StackLayout {
                     anchors.fill: parent
                     anchors.margins: 12
                     anchors.leftMargin: 0
-                    spacing: 12
+                    currentIndex: workspaceScreen.currentView === "Dashboard" ? 0 : 1
 
-                    // >> top bar
-                    RowLayout {
+                    // >> dashboard view
+                    DashboardView {
                         Layout.fillWidth: true
+                        Layout.fillHeight: true
 
-                        Components.SearchBar {
-                            Layout.preferredWidth: 300
-                            placeholderText: "Search ..."
-                        }
-                        
-                        Item {
-                            Layout.fillWidth: true 
-                        }
-
-                        Components.PrimaryButton {
-                            text: "User"
-                            textSize: 13
-                            iconName: "account"
-                            enableAnimate: true
-
-                            onClicked: userMenu.open()
-
-                            Components.ContextMenu {
-                                id: userMenu
-                                y: parent.height + 4 + (userMenu.slideOffset !== undefined ? userMenu.slideOffset : 0)
-                                x: parent.width - width
-
-                                Components.ContextMenuItem {
-                                    text: "Logout"
-                                    iconName: "logout"
-                                    onTriggered: stack.pop() // > go back to login screen
-                                }
-                            }
-                        }
+                        onLogoutClicked: stack.pop()
                     }
 
-                    // >> tool bar
-                    RowLayout {
-                        Layout.fillWidth: true
-
-                        Components.DropdownChip {
-                            label: "Type"
-                            model: ["Documents", "Spreadsheets", "PDFs"]
-                            isSmall: true
-                        }
-
-                        Components.DropdownChip {
-                            label: "Status"
-                            model: ["All", "Active", "Inactive"]
-                            isSmall: true
-                        }
-
-                        Item {
-                            Layout.fillWidth: true 
-                        }
-
-                        Components.ToggleButtonGroup {
-                            Components.ToggleButton {
-                                iconName: "table-view"
-                                checked: true
-                            }
-                            Components.ToggleButton {
-                                iconName: "list-view" 
-                            }
-                            Components.ToggleButton {
-                                iconName: "grid-view"
-                            }
-                        }
-                    }
-
-                    // >> main content area (TODO)
-                    Rectangle {
+                    // >> data view (for units, customers, rents, payments, liabilities)
+                    DataView {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         
-                        color: "#FFFFFF"
-                        radius: 6
-                        border {
-                            color: appTheme.borderColor
-                            width: 0.5
-                        }
-                    }
-
-                    // >> bottom bar (TODO)
-                    Item {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 24
-                        
-                        Components.InfoText {
-                            text: "To Be Added"
-                            textSize: 11
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
+                        activeTabName: workspaceScreen.currentView
+                        onLogoutClicked: stack.pop()
                     }
                 }
             }
