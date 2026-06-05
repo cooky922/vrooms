@@ -30,12 +30,12 @@ Item {
                 textSize: 13
                 iconName: "account"
                 enableAnimate: true
-                onClicked: dataUserMenu.open()
+                onClicked: userMenu.open()
 
                 Components.ContextMenu {
-                    id: dataUserMenu
-                    y: parent.height + 4 + (dataUserMenu.slideOffset !== undefined ? dataUserMenu.slideOffset : 0)
-                    x: parent.width - width
+                    id: userMenu
+                    y: parent.height - 12 + (userMenu.slideOffset !== undefined ? userMenu.slideOffset : 0)
+                    x: parent.width - width + 16
                     
                     Components.ContextMenuItem {
                         text: "Logout"

@@ -1,41 +1,45 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Effects
+import QtQuick.Layouts
 
 Popup {
     id: root
-    padding: 8
+    padding: 20 
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
-    default property alias menuItems: contentColumn.data
+    default property alias menuItems: contentLayout.data
 
-    background: Item {
-        implicitWidth: 100
-
+    background: Item {        
         Rectangle {
             id: bgShape
             anchors.fill: parent
-            radius: 8
+            anchors.margins: 16
+            radius: 6 
             color: "#FFFFFF"
-            border.width: 1
-            border.color: "#E5E7EB"
-            visible: false 
+            visible: false
         }
 
         MultiEffect {
             source: bgShape
-            anchors.fill: bgShape
+            
+            x: bgShape.x
+            y: bgShape.y
+            width: bgShape.width
+            height: bgShape.height
+            
+            autoPaddingEnabled: true 
             shadowEnabled: true
-            shadowColor: "#25000000" 
-            shadowHorizontalOffset: 0
+            shadowColor: "#44000000"
+            shadowHorizontalOffset: 2
             shadowVerticalOffset: 4
             shadowBlur: 1.0
         }
     }
 
-    contentItem: Column {
-        id: contentColumn
-        spacing: 0
+    contentItem: ColumnLayout {
+        id: contentLayout
+        spacing: 2 
 
         function injectMenuReference() {
             for (let i = 0; i < children.length; i++) {
