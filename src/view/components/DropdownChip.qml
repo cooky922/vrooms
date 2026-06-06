@@ -42,11 +42,12 @@ Item {
     Component.onCompleted: autoBindItems()
     onMenuItemsChanged: autoBindItems()
 
-    property real paddingPerSide: root.isSmall ? 8 : 12
-    implicitWidth: contentRow.implicitWidth + (paddingPerSide * 2)
+    property real chipLeftPadding: root.isSmall ? 12 : 16
+    property real chipRightPadding: root.hasSelection ? (root.isSmall ? 4 : 6) : (root.isSmall ? 8 : 12)
+    implicitWidth: contentRow.implicitWidth + chipLeftPadding + chipRightPadding
     implicitHeight: root.isSmall ? 26 : 30
 
-    property real rightSplitWidth: root.hasSelection ? (closeRow.implicitWidth + paddingPerSide) : 0
+    property real rightSplitWidth: root.hasSelection ? (closeRow.implicitWidth + root.chipRightPadding) : 0
     Behavior on rightSplitWidth { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
 
     property bool isHovered: chipMouseArea.containsMouse || (root.hasSelection && clearArea.containsMouse)
@@ -81,8 +82,10 @@ Item {
         // > chip content
         Row {
             id: contentRow
-            anchors.centerIn: parent
-            spacing: root.isSmall ? 4 : 6
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.left: parent.left
+            anchors.leftMargin: root.chipLeftPadding
+            spacing: root.isSmall ? 2 : 4
 
             // > text label
             Text {
@@ -96,19 +99,27 @@ Item {
 
             // > dropdown arrow
             Item {
-                width: root.isSmall ? 14 : 16
-                height: root.isSmall ? 14 : 16
+                width: root.isSmall ? 20 : 22
+                height: root.isSmall ? 20 : 22
                 anchors.verticalCenter: parent.verticalCenter
                 
                 rotation: chipMenu.visible ? 180 : 0
                 Behavior on rotation { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
 
+                Rectangle {
+                    anchors.fill: parent
+                    radius: height / 2
+                    color: chipMouseArea.pressed ? "#26001D35" : (chipMouseArea.containsMouse ? "#1A001D35" : "transparent")
+                    scale: chipMouseArea.pressed ? 0.9 : 1.0
+                    Behavior on scale { NumberAnimation { duration: 100 } }
+                }
+
                 Image {
                     id: arrowIcon
                     source: root._iconSourceDirectory + root.arrowIconName + ".svg"
-                    sourceSize.width: parent.width
-                    sourceSize.height: parent.height
-                    anchors.fill: parent
+                    sourceSize.width: root.isSmall ? 12 : 14
+                    sourceSize.height: root.isSmall ? 12 : 14
+                    anchors.centerIn: parent
                     visible: false
                 }
 
@@ -134,7 +145,7 @@ Item {
                     id: closeRow
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: root.isSmall ? 4 : 6
+                    spacing: root.isSmall ? 2 : 4
 
                     // >> separator
                     Rectangle {
@@ -146,16 +157,24 @@ Item {
 
                     // >> close icon
                     Item {
-                        width: root.isSmall ? 14 : 16
-                        height: root.isSmall ? 14 : 16
+                        width: root.isSmall ? 20 : 22
+                        height: root.isSmall ? 20 : 22
                         anchors.verticalCenter: parent.verticalCenter
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: height / 2
+                            color: clearArea.pressed ? "#26001D35" : (clearArea.containsMouse ? "#1A001D35" : "transparent")
+                            scale: clearArea.pressed ? 0.9 : 1.0
+                            Behavior on scale { NumberAnimation { duration: 100 } }
+                        }
 
                         Image {
                             id: closeIcon
                             source: root._iconSourceDirectory + root.clearIconName + ".svg"
-                            sourceSize.width: parent.width
-                            sourceSize.height: parent.height
-                            anchors.fill: parent
+                            sourceSize.width: root.isSmall ? 12 : 14
+                            sourceSize.height: root.isSmall ? 12 : 14
+                            anchors.centerIn: parent
                             visible: false
                         }
 

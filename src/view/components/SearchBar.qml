@@ -29,7 +29,9 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         height: parent.height
 
-        anchors.verticalCenterOffset: rootArea.containsMouse ? -2 : 0
+        readonly property bool isHovered: rootArea.containsMouse || clearMouseArea.containsMouse || inputField.hovered
+
+        anchors.verticalCenterOffset: isHovered ? -2 : 0
         Behavior on anchors.verticalCenterOffset { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
 
         // > background rectangle with rounded corners
@@ -97,8 +99,7 @@ Item {
             // >> separator and clear button
             Item {
                 id: clearSection
-                
-                Layout.preferredWidth: root.text !== "" ? 24 : 0
+                Layout.preferredWidth: root.text !== "" ? 28 : 0
                 Layout.fillHeight: true
                 clip: true 
                 opacity: root.text !== "" ? 1.0 : 0.0
@@ -121,26 +122,25 @@ Item {
 
                     // >>> clear button
                     Item {
-                        width: 14
-                        height: 14
+                        width: 20
+                        height: 20
                         anchors.verticalCenter: parent.verticalCenter
 
                         Rectangle {
                             anchors.fill: parent
-                            radius: 8
+                            radius: 10
                             
-                            color: clearMouseArea.containsMouse ? "#D1D5DB" : "transparent"
+                            color: clearMouseArea.pressed ? "#CDCDCD" : (clearMouseArea.containsMouse ? "#DDDDDD" : "transparent")
                             scale: clearMouseArea.pressed ? 0.9 : 1.0
                             
-                            Behavior on color { ColorAnimation { duration: 100 } }
                             Behavior on scale { NumberAnimation { duration: 100 } }
                         }
 
                         Image {
                             id: closeIcon
                             source: root._iconSourceDirectory + "close.svg"
-                            sourceSize.width: 16
-                            sourceSize.height: 16
+                            sourceSize.width: 14
+                            sourceSize.height: 14
                             anchors.centerIn: parent
                             visible: false
                         }
