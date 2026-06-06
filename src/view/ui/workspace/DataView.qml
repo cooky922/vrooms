@@ -81,6 +81,22 @@ Item {
                 color: appTheme.borderColor
                 width: 0.5
             }
+            clip: true
+
+            DataTable {
+                id: dataTable
+                anchors.fill: parent
+                anchors.margins: 5
+                visible: appDataViewController.totalItemCount > 0
+            }
+
+            Components.InfoText {
+                text: "No " + root.activeTabName.toLowerCase() + " found :("
+                textSize: 30
+                textColor: "#888888"
+                anchors.centerIn: parent
+                visible: appDataViewController.totalItemCount === 0
+            }
         }
 
         // > data bottom bar

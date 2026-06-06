@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
 
-
 @dataclass
 class Sorted:
     column: str
@@ -10,7 +9,6 @@ class Sorted:
     @staticmethod
     def By(column: str, ascending: bool = True) -> 'Sorted':
         return Sorted(column, ascending)
-
 
 @dataclass
 class Paged:
@@ -24,7 +22,6 @@ class Paged:
     @staticmethod
     def Stream(size: int) -> 'Paged':
         return Paged(size=size, index=None)
-
 
 @dataclass
 class Search:

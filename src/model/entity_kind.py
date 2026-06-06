@@ -1,6 +1,5 @@
 from enum import Enum
 
-
 class EntityKind(Enum):
     CUSTOMER  = 'Customer'
     UNIT      = 'Unit'

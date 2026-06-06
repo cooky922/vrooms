@@ -142,6 +142,13 @@ Item {
                         
                         activeTabName: workspaceScreen.currentView
                         onLogoutClicked: stack.pop()
+
+                        onActiveTabNameChanged: {
+                            if (activeTabName !== "Dashboard") {
+                                // appUtils.printLog("Reselecting entity for tab: " + activeTabName)
+                                appDataViewController.reselectEntity(activeTabName)
+                            }
+                        }
                     }
                 }
             }

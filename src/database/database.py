@@ -3,14 +3,13 @@ from typing import Any, Optional
 import sqlite3
 import threading
 
-
 class SQLDatabase:
     _db_path: Optional[Path] = None
     _local = threading.local()
 
     @classmethod
     def initialize(cls) -> None:
-        cls._db_path = Path(__file__).parent / 'data' / 'vrooms_directory.db'
+        cls._db_path = Path(__file__).parent.parent.parent / 'data' / 'vrooms_directory.db'
         sql_path = Path(__file__).parent / 'init_db.sql'
         cls._db_path.parent.mkdir(parents=True, exist_ok=True)
         

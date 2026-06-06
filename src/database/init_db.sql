@@ -1,55 +1,63 @@
 PRAGMA foreign_keys = ON;
 
-CREATE TABLE IF NOT EXISTS customers (
-    customer_id             TEXT PRIMARY KEY,
-    first_name              TEXT NOT NULL,
-    last_name               TEXT NOT NULL,
-    registration_date       TEXT NOT NULL,
-    driver_license_id       TEXT NOT NULL UNIQUE,
-    driver_license_picture  TEXT,
-    home_address            TEXT,
-    contact_number          TEXT NOT NULL
-);
-
 CREATE TABLE IF NOT EXISTS units (
-    plate_number      TEXT PRIMARY KEY,
-    unit_model        TEXT NOT NULL,
-    unit_status       TEXT NOT NULL DEFAULT 'Available',
-    daily_rate        REAL NOT NULL,
-    unit_picture      TEXT,
-    registration_date TEXT NOT NULL
+    plateNumber TEXT PRIMARY KEY,
+    unitModel TEXT NOT NULL,
+    unitPicture TEXT DEFAULT NULL,
+    unitStatus TEXT NOT NULL CHECK(unitStatus IN ('Available', 'Rented', 'Maintenance')),
+    dailyRate REAL NOT NULL CHECK (dailyRate > 0),
+    registrationDate TEXT NOT NULL
 );
+CREATE INDEX IF NOT EXISTS idx_unitStatus ON units(unitStatus);
+
+CREATE TABLE IF NOT EXISTS customers (
+    customerID INTEGER PRIMARY KEY AUTOINCREMENT,
+    firstName TEXT NOT NULL,
+    lastName TEXT NOT NULL,
+    contactNumber TEXT NOT NULL UNIQUE,
+    homeAddress TEXT NOT NULL,
+    driverLicenseID TEXT NOT NULL UNIQUE,
+    driverLicenseIDPicture TEXT NOT NULL,
+    customerStatus TEXT NOT NULL CHECK(customerStatus IN ('Active', 'Suspended', 'Blacklisted')),
+    registrationDate TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_customerStatus ON customers(customerStatus);
 
 CREATE TABLE IF NOT EXISTS rents (
-    rental_id               TEXT PRIMARY KEY,
-    customer_id             TEXT NOT NULL,
-    plate_number            TEXT NOT NULL,
-    rental_status           TEXT NOT NULL DEFAULT 'Active',
-    reserve_date            TEXT NOT NULL,
-    rental_date_time        TEXT NOT NULL,
-    expected_return_date    TEXT NOT NULL,
-    actual_return_date_time TEXT,
-    rental_base_cost        REAL NOT NULL,
-    FOREIGN KEY (customer_id)  REFERENCES customers(customer_id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    FOREIGN KEY (plate_number) REFERENCES units(plate_number)    ON DELETE RESTRICT ON UPDATE CASCADE
+    rentalID INTEGER PRIMARY KEY AUTOINCREMENT,
+    customerID INTEGER NOT NULL,
+    unitPlateNumber TEXT NOT NULL,
+    rentalStatus TEXT NOT NULL CHECK(rentalStatus IN ('Cancelled', 'Active', 'Returned with Liabilities', 'Completed')),
+    rentalDateTime TEXT NOT NULL,
+    expectedReturnDateTime TEXT NOT NULL,
+    actualReturnDateTime TEXT DEFAULT NULL,
+    rentalBaseCost REAL NOT NULL,
+    
+    FOREIGN KEY (customerID) REFERENCES customers(customerID) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (unitPlateNumber) REFERENCES units(plateNumber) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT chk_rental_dates CHECK (rentalDateTime <= expectedReturnDateTime)
 );
+CREATE INDEX IF NOT EXISTS idx_rental_customer ON rents(customerID);
+CREATE INDEX IF NOT EXISTS idx_rental_unit ON rents(unitPlateNumber);
+CREATE INDEX IF NOT EXISTS idx_rentalStatus ON rents(rentalStatus);
 
 CREATE TABLE IF NOT EXISTS payments (
-    payment_id        TEXT NOT NULL,
-    rental_id         TEXT NOT NULL,
-    payment_type      TEXT NOT NULL,
-    payment_date_time TEXT NOT NULL,
-    amount_paid       REAL NOT NULL,
-    PRIMARY KEY (payment_id, rental_id),
-    FOREIGN KEY (rental_id) REFERENCES rents(rental_id) ON DELETE CASCADE ON UPDATE CASCADE
+    paymentID INTEGER PRIMARY KEY AUTOINCREMENT,
+    rentalID INTEGER NOT NULL,
+    amountPaid REAL NOT NULL,
+    paymentDateTime TEXT NOT NULL,
+    paymentType TEXT NOT NULL CHECK(paymentType IN ('Base Fee', 'Liability Fee')),
+    FOREIGN KEY (rentalID) REFERENCES rents(rentalID) ON DELETE RESTRICT ON UPDATE CASCADE
 );
+CREATE INDEX IF NOT EXISTS idx_payment_rental ON payments(rentalID);
 
 CREATE TABLE IF NOT EXISTS liabilities (
-    liability_id     TEXT NOT NULL,
-    rental_id        TEXT NOT NULL,
-    liability_status TEXT NOT NULL DEFAULT 'Pending',
-    liability_type   TEXT NOT NULL,
-    liability_fee    REAL NOT NULL DEFAULT 0.0,
-    PRIMARY KEY (liability_id, rental_id),
-    FOREIGN KEY (rental_id) REFERENCES rents(rental_id) ON DELETE CASCADE ON UPDATE CASCADE
+    liabilityID INTEGER PRIMARY KEY AUTOINCREMENT,
+    rentalID INTEGER NOT NULL,
+    liabilityType TEXT NOT NULL CHECK(liabilityType IN ('Overdue', 'Damage', 'Equipment Loss', 'Other')),
+    liabilityFee REAL NOT NULL,
+    liabilityStatus TEXT NOT NULL CHECK(liabilityStatus IN ('Active', 'Cleared')),
+    FOREIGN KEY (rentalID) REFERENCES rents(rentalID) ON DELETE RESTRICT ON UPDATE CASCADE
 );
+CREATE INDEX IF NOT EXISTS idx_liability_rental ON liabilities(rentalID);
+CREATE INDEX IF NOT EXISTS idx_liabilityStatus ON liabilities(liabilityStatus);

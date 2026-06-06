@@ -8,18 +8,20 @@ from src.model import (
     CustomerRepository,
     UnitRepository,
     RentRepository,
+    PaymentRepository,
+    LiabilityRepository,
     REPOSITORY_MAP,
 )
 from src.model.validators import (
     UNIT_STATUS_OPTIONS,
+    CUSTOMER_STATUS_OPTIONS,
     RENTAL_STATUS_OPTIONS,
     PAYMENT_TYPE_OPTIONS,
     LIABILITY_STATUS_OPTIONS,
     LIABILITY_TYPE_OPTIONS,
 )
 
-
-class QMLRecordsController(QObject):
+class QMLDataViewController(QObject):
     selectedEntityChanged = pyqtSignal()
     paginationChanged     = pyqtSignal()
     sortStateChanged      = pyqtSignal()
@@ -28,7 +30,7 @@ class QMLRecordsController(QObject):
     def __init__(self, table_model, parent=None):
         super().__init__(parent)
         self.table_model = table_model
-        self.entity_kind = EntityKind.CUSTOMER
+        self.entity_kind = EntityKind.UNIT
 
         self._page_index        = 0
         self._page_size         = 100
@@ -42,10 +44,9 @@ class QMLRecordsController(QObject):
         self._sort_ascending    = True
 
         self._search_text        = ''
-        self._search_filter_index= 0
+        self._search_filter_index = 0
 
-    # ── Properties ──────────────────────────────────────────────────────────
-
+    # Properties
     @pyqtProperty(int, notify=paginationChanged)
     def totalItemCount(self): return self._total_item_count
 
@@ -91,47 +92,48 @@ class QMLRecordsController(QObject):
         fields = self.entity_kind.get_model()
         def get_options(field_name: str):
             match field_name:
-                case 'unit_status':
+                case 'unitStatus':
                     return UNIT_STATUS_OPTIONS
-                case 'rental_status':
+                case 'customerStatus':
+                    return CUSTOMER_STATUS_OPTIONS
+                case 'rentalStatus':
                     return RENTAL_STATUS_OPTIONS
-                case 'payment_type':
+                case 'paymentType':
                     return PAYMENT_TYPE_OPTIONS
-                case 'liability_status':
+                case 'liabilityStatus':
                     return LIABILITY_STATUS_OPTIONS
-                case 'liability_type':
+                case 'liabilityType':
                     return LIABILITY_TYPE_OPTIONS
-                case 'customer_id' if self.entity_kind == EntityKind.RENT:
+                case 'customerID' if self.entity_kind == EntityKind.RENT:
                     return CustomerRepository.get_keys()
-                case 'plate_number' if self.entity_kind == EntityKind.RENT:
+                case 'unitPlateNumber' if self.entity_kind == EntityKind.RENT:
                     return UnitRepository.get_keys()
-                case 'rental_id' if self.entity_kind in (EntityKind.PAYMENT, EntityKind.LIABILITY):
+                case 'rentalID' if self.entity_kind in (EntityKind.PAYMENT, EntityKind.LIABILITY):
                     return RentRepository.get_keys()
                 case _:
                     return []
         return [{
             'internal_name': f.value.internal_name,
             'display_name':  f.value.display_name,
-            'options':       get_options(f.value.internal_name),
+            'options':       get_options(f.value.internal_name)
         } for f in fields]
 
-    # ── Slots ────────────────────────────────────────────────────────────────
-
+    # Slots
     @pyqtSlot(str)
     def reselectEntity(self, entity_name: str):
         if self.selectedEntityName != entity_name:
             kind_map = {
-                'Customer':  EntityKind.CUSTOMER,
-                'Unit':      EntityKind.UNIT,
-                'Rent':      EntityKind.RENT,
-                'Payment':   EntityKind.PAYMENT,
-                'Liability': EntityKind.LIABILITY,
+                'Customers':  EntityKind.CUSTOMER,
+                'Units':      EntityKind.UNIT,
+                'Rents':      EntityKind.RENT,
+                'Payments':   EntityKind.PAYMENT,
+                'Liabilities': EntityKind.LIABILITY,
             }
-            self.entity_kind         = kind_map.get(entity_name, EntityKind.CUSTOMER)
+            self.entity_kind         = kind_map.get(entity_name, EntityKind.UNIT)
             self._page_index         = 0
             self._sort_field_index   = 0
             self._sort_ascending     = True
-            self._search_filter_index= 0
+            self._search_filter_index = 0
             self.resetFilterOptions()
             self.sortStateChanged.emit()
             self.selectedEntityChanged.emit()
@@ -208,7 +210,7 @@ class QMLRecordsController(QObject):
 
     @pyqtSlot()
     def resetStates(self):
-        self.entity_kind          = EntityKind.CUSTOMER
+        self.entity_kind          = EntityKind.UNIT
         self._page_index          = 0
         self._sort_field_index    = 0
         self._sort_ascending      = True
@@ -233,6 +235,8 @@ class QMLRecordsController(QObject):
         is_valid     = True
 
         repo = REPOSITORY_MAP[self.entity_kind]
+        parent_id = current_data.get(repo.PARENT_FK) if repo.PARENT_FK else None
+        
         for col in repo.get_columns():
             val = current_data.get(col, '')
             try:
@@ -247,16 +251,16 @@ class QMLRecordsController(QObject):
                 try:
                     if mode == 'edit' and current_data.get(primary_key) == initial_data.get(primary_key):
                         continue
-                    repo.check_duplicate_key(val)
+                    repo.check_duplicate_key(val, parent_id=parent_id)
                 except DatabaseError as e:
                     errors[col] = e.message
                     is_valid    = False
 
         return {'isValid': is_valid, 'errors': errors}
 
-    @pyqtSlot(str, result='QVariantMap')
-    def getRecordByKey(self, key):
-        return REPOSITORY_MAP[self.entity_kind].get_record(key) or {}
+    @pyqtSlot(str, str, result='QVariantMap')
+    def getRecordByKey(self, key, parent_id=""):
+        return REPOSITORY_MAP[self.entity_kind].get_record(key, parent_id=parent_id if parent_id else None) or {}
 
     @pyqtSlot('QVariantMap', result='QVariantMap')
     def addRecord(self, new_data):
@@ -271,9 +275,12 @@ class QMLRecordsController(QObject):
     @pyqtSlot('QVariantMap', 'QVariantMap', result='QVariantMap')
     def updateRecord(self, old_data, new_data):
         try:
+            repo = REPOSITORY_MAP[self.entity_kind]
             primary_key   = self.getPrimaryKey()
             old_key_value = str(old_data[primary_key])
-            REPOSITORY_MAP[self.entity_kind].update_record(self.normalizeRecord(new_data), key=old_key_value)
+            parent_id     = str(old_data[repo.PARENT_FK]) if repo.PARENT_FK else None
+            
+            repo.update_record(self.normalizeRecord(new_data), key=old_key_value, parent_id=parent_id)
             return {'success': True, 'message': 'Record updated successfully.'}
         except Exception as e:
             return {'success': False, 'message': str(e)}
@@ -293,8 +300,12 @@ class QMLRecordsController(QObject):
     @pyqtSlot('QVariantMap', result='QVariantMap')
     def deleteRecord(self, old_data):
         try:
+            repo = REPOSITORY_MAP[self.entity_kind]
             primary_key = self.getPrimaryKey()
-            REPOSITORY_MAP[self.entity_kind].delete_record(key=str(old_data[primary_key]))
+            key_value = str(old_data[primary_key])
+            parent_id = str(old_data[repo.PARENT_FK]) if repo.PARENT_FK else None
+            
+            repo.delete_record(key=key_value, parent_id=parent_id)
             return {'success': True, 'message': 'Record deleted successfully.'}
         except Exception as e:
             return {'success': False, 'message': str(e)}
@@ -311,13 +322,12 @@ class QMLRecordsController(QObject):
         finally:
             self.refreshTable()
 
-    # ── Internal ─────────────────────────────────────────────────────────────
-
+    # Internal methods (cannot be used outside this file)
     def normalizeRecord(self, data: dict) -> dict:
         new_data = {}
         repo     = REPOSITORY_MAP[self.entity_kind]
         for k, v in data.items():
-            if k in ('daily_rate', 'rental_base_cost', 'amount_paid', 'liability_fee'):
+            if k in ('dailyRate', 'rentalBaseCost', 'amountPaid', 'liabilityFee'):
                 new_data[k] = float(v) if (v is not None and v != '') else None
             elif v is None or v == '':
                 new_data[k] = None
