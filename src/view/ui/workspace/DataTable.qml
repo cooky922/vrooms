@@ -6,161 +6,310 @@ Rectangle {
     id: root
     color: "transparent"
 
+    property int hoveredRowIndex: -1
+
     Connections {
         target: appDataViewController
         function onSelectedEntityChanged() {
+            tableView.contentX = 0
+            tableView.contentY = 0
             tableView.forceLayout()
             header.forceLayout()
         }
     }
 
-    ColumnLayout {
+    ScrollBar {
+        id: mainVBar
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        z: 10
+        policy: ScrollBar.AsNeeded
+    }
+
+    RowLayout {
         anchors.fill: parent
+        
+        anchors.leftMargin: 10
+        anchors.rightMargin: mainVBar.visible ? mainVBar.width : 0
         spacing: 0
 
-        // > Table Header
-        HorizontalHeaderView {
-            id: header
-            syncView: tableView
-            boundsBehavior: Flickable.StopAtBounds
-            resizableColumns: false
-            Layout.fillWidth: true
-            Layout.alignment: Qt.AlignTop
-            
-            model: appDataViewController.selectedEntityTransformedModel
-            
-            delegate: Rectangle {
-                implicitHeight: 30
-                color: "transparent"
-                
-                Row {
-                    spacing: 10
-                    topPadding: 5
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-
-                    Text {
-                        leftPadding: 10
-                        text: (modelData && modelData.display_name) ? modelData.display_name : ""
-                        font.bold: true
-                        font.pixelSize: 12
-                        font.family: appTheme.rethinkSansFontName
-                        color: "#888888"
-                        verticalAlignment: Text.AlignVCenter
-                    }
-
-                    // >> Sort Indicator Container
-                    Rectangle {
-                        width: 14; height: 14
-                        radius: 3
-                        anchors.verticalCenter: parent.verticalCenter
-                        color: appDataViewController.sortFieldIndex === index ? appTheme.activeColor : "transparent"
-                        visible: appDataViewController.sortFieldIndex === index
-                        
-                        Text {
-                            anchors.centerIn: parent
-                            text: appDataViewController.sortAscending ? "▲" : "▼"
-                            color: "black" 
-                            font.pixelSize: 8
-                        }
-                    }
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: appDataViewController.toggleSort(index)
-                }
-            }
-        }
-
-        // >> Bottom border for header
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 1
-            color: "#D1D5DB"
-        }
-
-        // >> Table Body
-        TableView {
-            id: tableView
-            model: appDataTableModel
-            clip: true
-            columnSpacing: 0
-            rowSpacing: 0
-            boundsBehavior: Flickable.StopAtBounds
-            ScrollIndicator.vertical: ScrollIndicator { }
-            ScrollIndicator.horizontal: ScrollIndicator { }
-
+        // > left side: scrollable data area
+        ColumnLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
+            spacing: 0
 
-            property int hoveredRow: -1
-
-            columnWidthProvider: function(column) {
-                let entityName = appDataViewController.selectedEntityName;
-                let contentWidth = appDataTableModel.getColumnWidth(column, entityName);
+            // >> table header
+            HorizontalHeaderView {
+                id: header
+                syncView: tableView
+                boundsBehavior: Flickable.StopAtBounds
+                resizableColumns: false
+                clip: true 
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignTop
                 
-                if (column === tableView.columns - 1) {
-                    let usedSpace = 0
-                    for (let i = 0; i < tableView.columns - 1; i++) {
-                        usedSpace += appDataTableModel.getColumnWidth(i, entityName)
-                    }
-                    let remainingSpace = tableView.width - usedSpace
-                    return Math.max(contentWidth, remainingSpace)
-                }
-                return contentWidth
-            }
-
-            onWidthChanged: forceLayout()
-
-            Connections {
-                target: appDataTableModel
-                function onModelReset() {
-                    tableView.contentX = 0
-                    tableView.contentY = 0
-                    Qt.callLater(tableView.forceLayout)
-                }
-            }
-
-            HoverHandler {
-                onHoveredChanged: if (!hovered) tableView.hoveredRow = -1
-            }
-
-            delegate: Rectangle {
-                implicitHeight: 30
-                color: tableView.hoveredRow == row ? "#E5E7EB" : "white"
+                model: appDataViewController.selectedEntityTransformedModel
                 
-                HoverHandler {
-                    cursorShape: Qt.PointingHandCursor
-                    onHoveredChanged: if (hovered) tableView.hoveredRow = row
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        // let rowData = appDataTableModel.getRowData(row)
-                        // recordDialog.openForInfo(rowData)
-                    }
-                }
-
-                Text {
-                    anchors.fill: parent
-                    anchors.margins: 10
-                    verticalAlignment: Text.AlignVCenter
+                delegate: Item {
+                    implicitHeight: 30
                     
-                    text: {
-                        if (model.display === undefined || model.display === null || model.display.length === 0)
-                            return "None"
-                        return model.display
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: 4 
+                        radius: 8 
+                        color: headerHover.hovered || headerTap.pressed ? "#F3F4F6" : "transparent"
+                        
+                        scale: headerTap.pressed ? 0.95 : 1.0
+                        Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutQuad } }
+                        
+                        Row {
+                            id: headerContent
+                            spacing: 8
+                            anchors.fill: parent
+                            
+                            transform: Translate {
+                                y: headerHover.hovered && !headerTap.pressed ? -1 : 0
+                                Behavior on y { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                            }
+
+                            Text {
+                                leftPadding: 16 
+                                text: (modelData && modelData.display_name) ? modelData.display_name : ""
+                                font.bold: true
+                                font.pixelSize: 12
+                                font.family: appTheme.rethinkSansFontName
+                                color: "#888888"
+                                verticalAlignment: Text.AlignVCenter
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            Rectangle {
+                                width: 20; height: 20 
+                                radius: 6 
+                                anchors.verticalCenter: parent.verticalCenter
+                                color: appTheme.activeColor
+                                visible: appDataViewController.sortFieldIndex === index
+                                
+                                Image {
+                                    anchors.centerIn: parent
+                                    source: "../../../../assets/icons/down.svg" 
+                                    sourceSize: Qt.size(14, 14) 
+                                    opacity: 0.9 
+                                    
+                                    transformOrigin: Item.Center
+                                    rotation: appDataViewController.sortAscending ? 180 : 0
+                                }
+                            }
+                        }
                     }
 
-                    font.family: appTheme.rethinkSansFontName
-                    font.pixelSize: 12
-                    color: (model.display) ? "#1F2937" : "#808080"
-                    elide: Text.ElideRight
+                    HoverHandler {
+                        id: headerHover
+                        cursorShape: Qt.PointingHandCursor
+                    }
+                    TapHandler {
+                        id: headerTap
+                        onTapped: appDataViewController.toggleSort(index)
+                    }
+                }
+            }
+
+            // >> bottom border below header
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 1
+                color: "#D1D5DB"
+            }
+
+            // >> table body
+            TableView {
+                id: tableView
+                model: appDataTableModel
+                clip: true
+                columnSpacing: 0
+                rowSpacing: 0
+                boundsBehavior: Flickable.StopAtBounds
+                
+                ScrollBar.horizontal: ScrollBar { }
+                ScrollBar.vertical: mainVBar 
+
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                columnWidthProvider: function(column) {
+                    let entityName = appDataViewController.selectedEntityName;
+                    let contentWidth = appDataTableModel.getColumnWidth(column, entityName);
+                    
+                    if (column === tableView.columns - 1) {
+                        let usedSpace = 0
+                        for (let i = 0; i < tableView.columns - 1; i++) {
+                            usedSpace += appDataTableModel.getColumnWidth(i, entityName)
+                        }
+                        let remainingSpace = tableView.width - usedSpace
+                        return Math.max(contentWidth, remainingSpace)
+                    }
+                    return contentWidth
+                }
+
+                onWidthChanged: forceLayout()
+
+                Connections {
+                    target: appDataTableModel
+                    function onModelReset() {
+                        Qt.callLater(tableView.forceLayout)
+                    }
+                }
+
+                delegate: Rectangle {
+                    implicitHeight: 30
+                    color: root.hoveredRowIndex === row ? "#F3F4F6" : "white"
+                    
+                    HoverHandler {
+                        cursorShape: Qt.PointingHandCursor
+                        onHoveredChanged: {
+                            if (hovered) root.hoveredRowIndex = row
+                            else if (root.hoveredRowIndex === row) root.hoveredRowIndex = -1
+                        }
+                    }
+
+                    TapHandler {
+                        onTapped: {
+                            // TODO: Implement row selection and interaction logic here
+                        }
+                    }
+
+                    Rectangle {
+                        width: parent.width
+                        height: 1
+                        anchors.bottom: parent.bottom
+                        color: "#E5E7EB"
+                    }
+
+                    Text {
+                        anchors.fill: parent
+                        anchors.leftMargin: 20
+                        anchors.rightMargin: 10
+                        anchors.topMargin: 10
+                        anchors.bottomMargin: 10
+                        
+                        verticalAlignment: Text.AlignVCenter
+                        text: (model.display) ? model.display : "None"
+                        font.family: appTheme.rethinkSansFontName
+                        font.pixelSize: 12
+                        color: (model.display) ? "#333333" : "#808080"
+                        elide: Text.ElideRight
+                    }
+                }
+            }
+        }
+
+        // > right side: fixed action buttons
+        ColumnLayout {
+            Layout.preferredWidth: 40 
+            Layout.fillHeight: true
+            spacing: 0
+
+            // >> sort button area
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: header.height
+                color: "white" 
+
+                Rectangle {
+                    width: 28
+                    height: 28
+                    radius: 14
+                    anchors.centerIn: parent
+                    color: rightSortHover.hovered || rightSortTap.pressed ? "#F3F4F6" : "transparent"
+                    
+                    scale: rightSortTap.pressed ? 0.95 : 1.0
+                    Behavior on scale { NumberAnimation { duration: 100 } }
+
+                    Image {
+                        anchors.centerIn: parent
+                        source: "../../../../assets/icons/sort.svg"
+                        sourceSize: Qt.size(16, 16)
+                        opacity: 0.7
+                    }
+
+                    HoverHandler { 
+                        id: rightSortHover 
+                        cursorShape: Qt.PointingHandCursor
+                    }
+                    TapHandler {
+                        id: rightSortTap
+                        // TODO: add functionality to open a sort options menu
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 1
+                color: "#D1D5DB"
+            }
+
+            // >> synchronized action list
+            ListView {
+                id: actionList
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                model: appDataTableModel
+                clip: true
+                interactive: false 
+                contentY: tableView.contentY 
+                
+                Layout.bottomMargin: (tableView.ScrollBar.horizontal && tableView.ScrollBar.horizontal.visible) 
+                                     ? tableView.ScrollBar.horizontal.height : 0
+
+                delegate: Rectangle {
+                    width: ListView.view.width
+                    height: 30 
+                    color: root.hoveredRowIndex === index ? "#F3F4F6" : "white"
+
+                    HoverHandler {
+                        cursorShape: Qt.ArrowCursor
+                        onHoveredChanged: {
+                            if (hovered) root.hoveredRowIndex = index
+                            else if (root.hoveredRowIndex === index) root.hoveredRowIndex = -1
+                        }
+                    }
+
+                    Rectangle {
+                        width: parent.width
+                        height: 1
+                        anchors.bottom: parent.bottom
+                        color: "#E5E7EB"
+                    }
+
+                    Rectangle {
+                        width: 28
+                        height: 28
+                        radius: 14
+                        anchors.centerIn: parent
+                        color: moreHover.hovered || moreTap.pressed ? "#E5E7EB" : "transparent"
+
+                        scale: moreTap.pressed ? 0.95 : 1.0
+                        Behavior on scale { NumberAnimation { duration: 100 } }
+
+                        Image {
+                            anchors.centerIn: parent
+                            source: "../../../../assets/icons/more.svg"
+                            sourceSize: Qt.size(16, 16)
+                            opacity: 0.7
+                        }
+
+                        HoverHandler { 
+                            id: moreHover 
+                            cursorShape: Qt.PointingHandCursor
+                        }
+                        TapHandler {
+                            id: moreTap
+                            // TODO: add functionality to open a row-specific action menu
+                        }
+                    }
                 }
             }
         }
