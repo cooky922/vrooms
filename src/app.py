@@ -10,11 +10,10 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtQml import QQmlApplicationEngine
 from PyQt6.QtWidgets import QApplication
 
-from src.controller.data_view_controller import QMLDataViewController
-from src.database.database import SQLDatabase
-from src.model.table_model import RecordTableModel
-from src.model.repositories import (
-    REPOSITORY_MAP, 
+from src.controller import QMLDataViewController
+from src.database import SQLDatabase
+from src.model import (
+    DataTableModel,
     UnitRepository, 
     CustomerRepository, 
     RentRepository, 
@@ -57,7 +56,7 @@ class App(QApplication):
         # Creating context objects
         self.appTheme = QMLAppTheme(self)
         self.appUtils = QMLUtils(self)
-        self.appDataTableModel = RecordTableModel(self)
+        self.appDataTableModel = DataTableModel(self)
         self.appDataViewController = QMLDataViewController(self.appDataTableModel, self)
 
         # Prepare QML context properties and load file

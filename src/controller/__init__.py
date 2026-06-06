@@ -1,3 +1,3 @@
 from .dashboard_controller import QMLDashboardController
-from .records_controller   import QMLRecordsController
+from .data_view_controller import QMLDataViewController
 from .settings_controller  import QMLSettingsController

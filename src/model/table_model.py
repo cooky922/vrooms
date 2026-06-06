@@ -3,7 +3,7 @@ from PyQt6.QtCore import Qt, QAbstractTableModel, QModelIndex, pyqtSlot, pyqtPro
 from .entity_kind import EntityKind
 from .repositories import REPOSITORY_MAP
 
-class RecordTableModel(QAbstractTableModel):
+class DataTableModel(QAbstractTableModel):
     def __init__(self, parent = None):
         super().__init__(parent)
         self._entity_kind = EntityKind.UNIT

@@ -6,7 +6,9 @@ from .repositories import (
     RentRepository,
     PaymentRepository,
     LiabilityRepository,
+    REPOSITORY_MAP
 )
+from .table_model import DataTableModel
 
 REPOSITORY_MAP = {
     EntityKind.CUSTOMER:  CustomerRepository,
