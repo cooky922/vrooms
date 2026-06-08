@@ -8,6 +8,9 @@ Rectangle {
 
     property int hoveredRowIndex: -1
 
+    signal editRowRequested(int rowIndex)
+    signal deleteRowRequested(int rowIndex)
+
     Connections {
         target: appDataViewController
         function onSelectedEntityChanged() {
@@ -29,7 +32,6 @@ Rectangle {
 
     RowLayout {
         anchors.fill: parent
-        
         anchors.leftMargin: 10
         anchors.rightMargin: mainVBar.visible ? mainVBar.width : 0
         spacing: 0
@@ -46,36 +48,33 @@ Rectangle {
                 syncView: tableView
                 boundsBehavior: Flickable.StopAtBounds
                 resizableColumns: false
-                clip: true 
+                clip: true
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignTop
-                
                 model: appDataViewController.selectedEntityTransformedModel
-                
+
                 delegate: Item {
                     implicitHeight: 30
-                    
+
                     Rectangle {
                         anchors.fill: parent
-                        anchors.margins: 4 
-                        radius: 8 
+                        anchors.margins: 4
+                        radius: 8
                         color: headerHover.hovered || headerTap.pressed ? "#F3F4F6" : "transparent"
-                        
                         scale: headerTap.pressed ? 0.95 : 1.0
                         Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutQuad } }
-                        
+
                         Row {
                             id: headerContent
                             spacing: 8
                             anchors.fill: parent
-                            
                             transform: Translate {
                                 y: headerHover.hovered && !headerTap.pressed ? -1 : 0
                                 Behavior on y { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
                             }
 
                             Text {
-                                leftPadding: 16 
+                                leftPadding: 16
                                 text: (modelData && modelData.display_name) ? modelData.display_name : ""
                                 font.bold: true
                                 font.pixelSize: 12
@@ -86,18 +85,17 @@ Rectangle {
                             }
 
                             Rectangle {
-                                width: 20; height: 20 
-                                radius: 6 
+                                width: 20; height: 20
+                                radius: 6
                                 anchors.verticalCenter: parent.verticalCenter
                                 color: appTheme.activeColor
                                 visible: appDataViewController.sortFieldIndex === index
-                                
+
                                 Image {
                                     anchors.centerIn: parent
-                                    source: "../../../../assets/icons/down.svg" 
-                                    sourceSize: Qt.size(14, 14) 
-                                    opacity: 0.9 
-                                    
+                                    source: "../../../../assets/icons/down.svg"
+                                    sourceSize: Qt.size(14, 14)
+                                    opacity: 0.9
                                     transformOrigin: Item.Center
                                     rotation: appDataViewController.sortAscending ? 180 : 0
                                 }
@@ -105,14 +103,8 @@ Rectangle {
                         }
                     }
 
-                    HoverHandler {
-                        id: headerHover
-                        cursorShape: Qt.PointingHandCursor
-                    }
-                    TapHandler {
-                        id: headerTap
-                        onTapped: appDataViewController.toggleSort(index)
-                    }
+                    HoverHandler { id: headerHover; cursorShape: Qt.PointingHandCursor }
+                    TapHandler { id: headerTap; onTapped: appDataViewController.toggleSort(index) }
                 }
             }
 
@@ -131,22 +123,18 @@ Rectangle {
                 columnSpacing: 0
                 rowSpacing: 0
                 boundsBehavior: Flickable.StopAtBounds
-                
                 ScrollBar.horizontal: ScrollBar { }
-                ScrollBar.vertical: mainVBar 
-
+                ScrollBar.vertical: mainVBar
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
                 columnWidthProvider: function(column) {
-                    let entityName = appDataViewController.selectedEntityName;
-                    let contentWidth = appDataTableModel.getColumnWidth(column, entityName);
-                    
+                    let entityName = appDataViewController.selectedEntityName
+                    let contentWidth = appDataTableModel.getColumnWidth(column, entityName)
                     if (column === tableView.columns - 1) {
                         let usedSpace = 0
-                        for (let i = 0; i < tableView.columns - 1; i++) {
+                        for (let i = 0; i < tableView.columns - 1; i++)
                             usedSpace += appDataTableModel.getColumnWidth(i, entityName)
-                        }
                         let remainingSpace = tableView.width - usedSpace
                         return Math.max(contentWidth, remainingSpace)
                     }
@@ -157,15 +145,13 @@ Rectangle {
 
                 Connections {
                     target: appDataTableModel
-                    function onModelReset() {
-                        Qt.callLater(tableView.forceLayout)
-                    }
+                    function onModelReset() { Qt.callLater(tableView.forceLayout) }
                 }
 
                 delegate: Rectangle {
                     implicitHeight: 30
                     color: root.hoveredRowIndex === row ? "#F3F4F6" : "white"
-                    
+
                     HoverHandler {
                         cursorShape: Qt.PointingHandCursor
                         onHoveredChanged: {
@@ -181,19 +167,15 @@ Rectangle {
                     }
 
                     Rectangle {
-                        width: parent.width
-                        height: 1
+                        width: parent.width; height: 1
                         anchors.bottom: parent.bottom
                         color: "#E5E7EB"
                     }
 
                     Text {
                         anchors.fill: parent
-                        anchors.leftMargin: 20
-                        anchors.rightMargin: 10
-                        anchors.topMargin: 10
-                        anchors.bottomMargin: 10
-                        
+                        anchors.leftMargin: 20; anchors.rightMargin: 10
+                        anchors.topMargin: 10; anchors.bottomMargin: 10
                         verticalAlignment: Text.AlignVCenter
                         text: (model.display) ? model.display : "None"
                         font.family: appTheme.rethinkSansFontName
@@ -207,7 +189,7 @@ Rectangle {
 
         // > right side: fixed action buttons
         ColumnLayout {
-            Layout.preferredWidth: 40 
+            Layout.preferredWidth: 40
             Layout.fillHeight: true
             spacing: 0
 
@@ -215,15 +197,12 @@ Rectangle {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: header.height
-                color: "white" 
+                color: "white"
 
                 Rectangle {
-                    width: 28
-                    height: 28
-                    radius: 14
+                    width: 28; height: 28; radius: 14
                     anchors.centerIn: parent
                     color: rightSortHover.hovered || rightSortTap.pressed ? "#F3F4F6" : "transparent"
-                    
                     scale: rightSortTap.pressed ? 0.95 : 1.0
                     Behavior on scale { NumberAnimation { duration: 100 } }
 
@@ -234,10 +213,7 @@ Rectangle {
                         opacity: 0.7
                     }
 
-                    HoverHandler { 
-                        id: rightSortHover 
-                        cursorShape: Qt.PointingHandCursor
-                    }
+                    HoverHandler { id: rightSortHover; cursorShape: Qt.PointingHandCursor }
                     TapHandler {
                         id: rightSortTap
                         // TODO: add functionality to open a sort options menu
@@ -258,15 +234,14 @@ Rectangle {
                 Layout.fillHeight: true
                 model: appDataTableModel
                 clip: true
-                interactive: false 
-                contentY: tableView.contentY 
-                
-                Layout.bottomMargin: (tableView.ScrollBar.horizontal && tableView.ScrollBar.horizontal.visible) 
+                interactive: false
+                contentY: tableView.contentY
+                Layout.bottomMargin: (tableView.ScrollBar.horizontal && tableView.ScrollBar.horizontal.visible)
                                      ? tableView.ScrollBar.horizontal.height : 0
 
                 delegate: Rectangle {
                     width: ListView.view.width
-                    height: 30 
+                    height: 30
                     color: root.hoveredRowIndex === index ? "#F3F4F6" : "white"
 
                     HoverHandler {
@@ -278,36 +253,105 @@ Rectangle {
                     }
 
                     Rectangle {
-                        width: parent.width
-                        height: 1
+                        width: parent.width; height: 1
                         anchors.bottom: parent.bottom
                         color: "#E5E7EB"
                     }
 
                     Rectangle {
-                        width: 28
-                        height: 28
-                        radius: 14
+                        width: 28; height: 28; radius: 14
                         anchors.centerIn: parent
                         color: moreHover.hovered || moreTap.pressed ? "#E5E7EB" : "transparent"
-
                         scale: moreTap.pressed ? 0.95 : 1.0
                         Behavior on scale { NumberAnimation { duration: 100 } }
 
-                        Image {
+                        Text {
                             anchors.centerIn: parent
-                            source: "../../../../assets/icons/more.svg"
-                            sourceSize: Qt.size(16, 16)
-                            opacity: 0.7
+                            text: "⋯"
+                            font.pixelSize: 16
+                            color: "#555"
                         }
 
-                        HoverHandler { 
-                            id: moreHover 
-                            cursorShape: Qt.PointingHandCursor
-                        }
-                        TapHandler {
-                            id: moreTap
-                            // TODO: add functionality to open a row-specific action menu
+                        HoverHandler { id: moreHover; cursorShape: Qt.PointingHandCursor }
+                        TapHandler { id: moreTap; onTapped: rowMenu.open() }
+
+                        Popup {
+                            id: rowMenu
+                            x: -110; y: 0
+                            width: 130
+                            padding: 6
+                            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+                            background: Rectangle {
+                                color: "#FAFAFA"
+                                radius: 10
+                                border.color: "#E0E0E0"
+                                border.width: 1
+                            }
+
+                            contentItem: Column {
+                                spacing: 2
+
+                                //------------------Edit button-----------------
+                                Rectangle {
+                                    width: 118; height: 36; radius: 8
+                                    color: editHov.hovered ? "#F0F0F0" : "transparent"
+                                    Behavior on color { ColorAnimation { duration: 80 } }
+
+                                    Row {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        anchors.left: parent.left
+                                        anchors.leftMargin: 12
+                                        spacing: 8
+
+                                        Text {
+                                            text: "Edit"
+                                            font.pixelSize: 13
+                                            font.family: appTheme.rethinkSansFontName
+                                            color: "#333"
+                                        }
+                                    }
+
+                                    HoverHandler { id: editHov; cursorShape: Qt.PointingHandCursor }
+                                    TapHandler {
+                                        onTapped: {
+                                            rowMenu.close()
+                                            root.editRowRequested(index)
+                                        }
+                                    }
+                                }
+
+                                //------------------Delete button-----------
+                                Rectangle { width: 118; height: 1; color: "#E8E8E8" }
+
+                                Rectangle {
+                                    width: 118; height: 36; radius: 8
+                                    color: delHov.hovered ? "#FFF0F0" : "transparent"
+                                    Behavior on color { ColorAnimation { duration: 80 } }
+
+                                    Row {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        anchors.left: parent.left
+                                        anchors.leftMargin: 12
+                                        spacing: 8
+
+                                        Text {
+                                            text: "Delete"
+                                            font.pixelSize: 13
+                                            font.family: appTheme.rethinkSansFontName
+                                            color: "#E53935"
+                                        }
+                                    }
+
+                                    HoverHandler { id: delHov; cursorShape: Qt.PointingHandCursor }
+                                    TapHandler {
+                                        onTapped: {
+                                            rowMenu.close()
+                                            root.deleteRowRequested(index)
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
