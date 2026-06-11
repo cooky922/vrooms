@@ -13,6 +13,8 @@ Item {
     property bool isSmall: false
     property color parentBgColor: "#FFFFFF"
 
+    property real menuWidth: 0
+
     readonly property bool hasSelection: selectedValue !== ""
 
     property string clearIconName: "close"        
@@ -44,7 +46,8 @@ Item {
 
     property real chipLeftPadding: root.isSmall ? 12 : 16
     property real chipRightPadding: root.hasSelection ? (root.isSmall ? 4 : 6) : (root.isSmall ? 8 : 12)
-    implicitWidth: contentRow.implicitWidth + chipLeftPadding + chipRightPadding
+    
+    implicitWidth: labelText.implicitWidth + rightSection.implicitWidth + (root.isSmall ? 2 : 4) + chipLeftPadding + chipRightPadding
     implicitHeight: root.isSmall ? 26 : 30
 
     property real rightSplitWidth: root.hasSelection ? (closeRow.implicitWidth + root.chipRightPadding) : 0
@@ -79,23 +82,30 @@ Item {
             Behavior on border.color { ColorAnimation { duration: 150 } }
         }
 
-        // > chip content
-        Row {
-            id: contentRow
-            anchors.verticalCenter: parent.verticalCenter
+        // > text label
+        Text {
+            id: labelText
             anchors.left: parent.left
             anchors.leftMargin: root.chipLeftPadding
-            spacing: root.isSmall ? 2 : 4
+            anchors.right: rightSection.left
+            anchors.rightMargin: root.isSmall ? 2 : 4
+            anchors.verticalCenter: parent.verticalCenter
+            
+            text: root.hasSelection ? root.selectedValue : root.label
+            font.family: appTheme.inclusiveSansFontName
+            font.pixelSize: root.isSmall ? 12 : 13
+            font.weight: Font.Medium
+            color: root.hasSelection ? "#001D35" : "#444746"
+            elide: Text.ElideRight
+        }
 
-            // > text label
-            Text {
-                text: root.hasSelection ? root.selectedValue : root.label
-                font.family: appTheme.inclusiveSansFontName
-                font.pixelSize: root.isSmall ? 12 : 13
-                font.weight: Font.Medium
-                color: root.hasSelection ? "#001D35" : "#444746"
-                anchors.verticalCenter: parent.verticalCenter
-            }
+        // > right aligned buttons
+        Row {
+            id: rightSection
+            anchors.right: parent.right
+            anchors.rightMargin: root.chipRightPadding
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: root.isSmall ? 2 : 4
 
             // > dropdown arrow
             Item {
@@ -131,7 +141,7 @@ Item {
                 }
             }
 
-            // > separator and close icon (only visible when there's a selection)
+            // > separator and close icon
             Item {
                 id: closeSection
                 width: root.hasSelection ? closeRow.implicitWidth : 0
@@ -198,10 +208,7 @@ Item {
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             
-            onClicked: {
-                if (chipMenu.opened) chipMenu.close()
-                else chipMenu.open()
-            }
+            onClicked: chipMenu.toggle()
         }
 
         MouseArea {
@@ -223,15 +230,20 @@ Item {
     // > dropdown menu
     Components.ContextMenu {
         id: chipMenu
+        z: 999
         y: root.height + 3 + (chipMenu.slideOffset !== undefined ? chipMenu.slideOffset : 0)
         x: -3
+        
+        width: root.menuWidth > 0 ? root.menuWidth : implicitWidth
 
-        // NOTE: automatically generates options if the `model` array is used
         Repeater {
             model: root.model
             Components.ContextMenuItem {
                 text: modelData
-                onTriggered: root.selectedValue = modelData
+                onTriggered: {
+                    root.selectedValue = modelData
+                    chipMenu.close()
+                }
             }
         }
     }

@@ -1,39 +1,58 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Dialogs
+import "../../components" as Components
 
 Popup {
     id: root
 
-    // Set these before opening to pre-fill the form
-    property string unitPlate: ""
-    property string unitModel: ""
-    property string unitRegDate: ""
-    property string unitRate: ""
-    property string unitPhoto: ""
-
-    signal saveClicked(var unitData)
+    property var unitData: null
+    signal saveClicked(var oldData, var newData)
 
     anchors.centerIn: Overlay.overlay
     width: 420
+    height: Math.min(implicitHeight, Overlay.overlay ? Overlay.overlay.height * 0.9 : 600)
+    
     modal: true
     closePolicy: Popup.CloseOnEscape
+    transformOrigin: Popup.Center
 
-    // Pre-fill fields whenever the popup opens----------------------------
+    enter: Transition {
+        ParallelAnimation {
+            NumberAnimation { property: "scale"; from: 0.85; to: 1.0; duration: 350; easing.type: Easing.OutBack; easing.overshoot: 1.2 }
+            NumberAnimation { property: "opacity"; from: 0.0; to: 1.0; duration: 250 }
+        }
+    }
+    
+    exit: Transition {
+        ParallelAnimation {
+            NumberAnimation { property: "scale"; from: 1.0; to: 0.9; duration: 200; easing.type: Easing.InBack }
+            NumberAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: 150 }
+        }
+    }
+
     onOpened: {
-        plateField.text    = root.unitPlate
-        modelField.text    = root.unitModel
-        regDateField.text  = root.unitRegDate
-        rateField.text     = root.unitRate
-        photoUpload.photoPath = root.unitPhoto
+        if (root.unitData) {
+            plateField.text = root.unitData.plateNumber || ""
+            modelField.text = root.unitData.unitModel || ""
+            regDateField.text = (root.unitData.registrationDate && root.unitData.registrationDate !== "") 
+                ? root.unitData.registrationDate 
+                : Qt.formatDate(new Date(), "MMM dd, yyyy")
+            rateField.text = root.unitData.dailyRate || ""
+            photoUpload.photoPath = root.unitData.unitPicture || ""
+            statusChip.selectedValue = root.unitData.unitStatus || ""
+        }
     }
 
     onClosed: {
-        plateField.text       = ""
-        modelField.text       = ""
-        regDateField.text     = Qt.formatDate(new Date(), "MMM dd, yyyy")
-        rateField.text        = ""
+        plateField.text = ""
+        modelField.text = ""
+        regDateField.text = Qt.formatDate(new Date(), "MMM dd, yyyy")
+        rateField.text = ""
         photoUpload.photoPath = ""
+        statusChip.selectedValue = "" 
+        root.unitData = null
     }
 
     Overlay.modal: Rectangle { color: "#40000000" }
@@ -44,15 +63,23 @@ Popup {
     }
 
     contentItem: ColumnLayout {
+        id: contentLayout
         spacing: 16
 
-        // edit unit header ----------------------------------------
+        // > title bar
         RowLayout {
             Layout.fillWidth: true
+            spacing: 10
+
+            Image {
+                source: "../../../../assets/icons/unit.svg"
+                sourceSize: Qt.size(24, 24)
+                Layout.alignment: Qt.AlignVCenter
+            }
 
             Text {
                 text: "Edit Unit"
-                font { pixelSize: 20; bold: true; family: appTheme.rethinkSansFontName }
+                font { pixelSize: 20; bold: true; family: appTheme.inclusiveSansFontName }
                 color: "#1A1A1A"
                 Layout.fillWidth: true
             }
@@ -60,386 +87,298 @@ Popup {
             Rectangle {
                 width: 32; height: 32; radius: 16
                 color: closeHover.hovered ? "#E5E7EB" : "transparent"
-                Behavior on color { ColorAnimation { duration: 120 } }
 
-                Text { anchors.centerIn: parent; text: "✕"; font.pixelSize: 16; color: "#555" }
+                Image {
+                    source: "../../../../assets/icons/close.svg"
+                    sourceSize: Qt.size(14, 14)
+                    anchors.centerIn: parent
+                    opacity: 0.7
+                }
+
                 HoverHandler { id: closeHover; cursorShape: Qt.PointingHandCursor }
                 TapHandler { onTapped: root.close() }
             }
         }
 
-        // > plate number------------------------------------
-        ColumnLayout {
+        // > Scrollable Form Area
+        ScrollView {
+            id: formScrollView
             Layout.fillWidth: true
-            spacing: 6
+            Layout.fillHeight: true 
+            clip: true
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+            contentWidth: availableWidth 
 
-            Text {
-                text: "Plate number <font color='#E53935'>*</font>"
-                textFormat: Text.RichText
-                font { pixelSize: 13; family: appTheme.rethinkSansFontName }
-                color: "#333"
-            }
+            ColumnLayout {
+                width: formScrollView.availableWidth
+                spacing: 16
 
-            TextField {
-                id: plateField
-                Layout.fillWidth: true
-                placeholderText: "e.g. ABC 1234"
-                leftPadding: 16; rightPadding: 16
-                font { pixelSize: 13; family: appTheme.rethinkSansFontName }
-                color: "#333"
-                placeholderTextColor: "#AAAAAA"
-                background: Rectangle {
-                    radius: 24; color: "white"
-                    border { color: plateField.activeFocus ? appTheme.activeColor : "transparent"; width: 1.5 }
-                    Behavior on border.color { ColorAnimation { duration: 150 } }
-                }
-            }
-        }
-
-        // > model----------------------------------------
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 6
-
-            Text {
-                text: "Model <font color='#E53935'>*</font>"
-                textFormat: Text.RichText
-                font { pixelSize: 13; family: appTheme.rethinkSansFontName }
-                color: "#333"
-            }
-
-            TextField {
-                id: modelField
-                Layout.fillWidth: true
-                placeholderText: "e.g. Honda"
-                leftPadding: 16; rightPadding: 16
-                font { pixelSize: 13; family: appTheme.rethinkSansFontName }
-                color: "#333"
-                placeholderTextColor: "#AAAAAA"
-                background: Rectangle {
-                    radius: 24; color: "white"
-                    border { color: modelField.activeFocus ? appTheme.activeColor : "transparent"; width: 1.5 }
-                    Behavior on border.color { ColorAnimation { duration: 150 } }
-                }
-            }
-        }
-
-        // > registration date-----------------------------------
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 6
-
-            Text {
-                text: "Registration date <font color='#E53935'>*</font>"
-                textFormat: Text.RichText
-                font { pixelSize: 13; family: appTheme.rethinkSansFontName }
-                color: "#333"
-            }
-
-            TextField {
-                id: regDateField
-                Layout.fillWidth: true
-                placeholderText: "e.g. Jan 12, 2024"
-                leftPadding: 16; rightPadding: 16
-                font { pixelSize: 13; family: appTheme.rethinkSansFontName }
-                color: "#333"
-                placeholderTextColor: "#AAAAAA"
-                background: Rectangle {
-                    radius: 24; color: "white"
-                    border { color: regDateField.activeFocus ? appTheme.activeColor : "transparent"; width: 1.5 }
-                    Behavior on border.color { ColorAnimation { duration: 150 } }
-                }
-            }
-
-            // >> date shortcut buttons----------------------------------
-            RowLayout {
-                spacing: 8
-
-                Repeater {
-                    model: [
-                        { label: "Use today's date", action: "today" },
-                        { label: "Clear",            action: "clear" }
-                    ]
-
-                    Rectangle {
-                        required property var modelData
-                        implicitHeight: 34
-                        implicitWidth: btnRow.implicitWidth + 24
-                        radius: 24
-                        border { color: "#C0C7D0"; width: 1 }
-                        color: btnHover.hovered ? "#E5E7EB" : "white"
-                        Behavior on color { ColorAnimation { duration: 100 } }
-
-                        Row {
-                            id: btnRow
-                            anchors.centerIn: parent
-                            spacing: 6
-
-                            Image {
-                                source: "../../../../assets/icons/calendar.svg"
-                                sourceSize: Qt.size(14, 14)
-                                opacity: 0.6
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                            Text {
-                                text: modelData.label
-                                font { pixelSize: 12; family: appTheme.rethinkSansFontName }
-                                color: "#444"
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                        }
-
-                        HoverHandler { id: btnHover; cursorShape: Qt.PointingHandCursor }
-                        TapHandler {
-                            onTapped: regDateField.text = modelData.action === "today"
-                                ? Qt.formatDate(new Date(), "MMM dd, yyyy")
-                                : ""
-                        }
+                // > plate number
+                ColumnLayout {
+                    Layout.fillWidth: true; spacing: 6
+                    Text { 
+                        text: "Plate number <font color='#E53935'>*</font>"
+                        textFormat: Text.RichText
+                        font { pixelSize: 13; family: appTheme.inclusiveSansFontName }
+                        color: "#333" 
                     }
-                }
-            }
-
-            Text {
-                text: "Type a date or use the buttons above"
-                font { pixelSize: 10; family: appTheme.rethinkSansFontName }
-                color: "#AAAAAA"
-            }
-        }
-
-        // > daily rate------------------------------------
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 6
-
-            Text {
-                text: "Daily rate (₱) <font color='#E53935'>*</font>"
-                textFormat: Text.RichText
-                font { pixelSize: 13; family: appTheme.rethinkSansFontName }
-                color: "#333"
-            }
-
-            TextField {
-                id: rateField
-                Layout.fillWidth: true
-                placeholderText: "e.g. 300"
-                leftPadding: 16; rightPadding: 16
-                font { pixelSize: 13; family: appTheme.rethinkSansFontName }
-                color: "#333"
-                placeholderTextColor: "#AAAAAA"
-                inputMethodHints: Qt.ImhFormattedNumbersOnly
-                validator: RegularExpressionValidator { regularExpression: /^\d*\.?\d*$/ }
-                background: Rectangle {
-                    radius: 24; color: "white"
-                    border { color: rateField.activeFocus ? appTheme.activeColor : "transparent"; width: 1.5 }
-                    Behavior on border.color { ColorAnimation { duration: 150 } }
-                }
-            }
-        }
-
-        // > status (active, rented, maintenance) ------------------------------
-        ColumnLayout { 
-            Layout.fillWidth: true
-            spacing: 6
-
-            Text {
-                text: "Status <font color='#E53935'>*</font>"
-                textFormat: Text.RichText
-                font { pixelSize: 13; family: appTheme.rethinkSansFontName }
-                color: "#333"
-            }
-
-            ComboBox {
-                id: statusField
-                Layout.fillWidth: true
-                model: ["Available", "Rented", "Under Maintenance"]
-                font { pixelSize: 13; family: appTheme.rethinkSansFontName }
-
-                background: Rectangle {
-                    radius: 24; color: "white"
-                    border { color: statusField.activeFocus ? appTheme.activeColor : "#C0C7D0"; width: 1.5 }
-                    Behavior on border.color { ColorAnimation { duration: 150 } }
-                }
-
-                contentItem: Text {
-                    leftPadding: 16
-                    text: statusField.displayText
-                    font { pixelSize: 13; family: appTheme.rethinkSansFontName }
-                    color: "#333"
-                    verticalAlignment: Text.AlignVCenter
-                }
-
-                popup: Popup {
-                    y: statusField.height + 4
-                    width: statusField.width
-                    padding: 6
-
-                    background: Rectangle {
-                        color: "#FAFAFA"
-                        radius: 10
-                        border.color: "#E0E0E0"
-                        border.width: 1
-                    }
-
-                    contentItem: ListView {
-                        implicitHeight: contentHeight
-                        model: statusField.popup.visible ? statusField.delegateModel : null
-                        clip: true
-                    }
-                }
-
-                delegate: ItemDelegate {
-                    width: statusField.width - 12
-                    height: 36
-
-                    background: Rectangle {
-                        radius: 8
-                        color: hovered ? "#F0F0F0" : "transparent"
-                        Behavior on color { ColorAnimation { duration: 80 } }
-                    }
-
-                    contentItem: Text {
-                        leftPadding: 12
-                        text: modelData
+                    TextField {
+                        id: plateField
+                        Layout.fillWidth: true; Layout.preferredHeight: 30
+                        placeholderText: "e.g. ABC 1234"; leftPadding: 12; rightPadding: 32
                         font { pixelSize: 13; family: appTheme.rethinkSansFontName }
                         color: "#333"
-                        verticalAlignment: Text.AlignVCenter
+                        placeholderTextColor: "#AAAAAA"
+                        background: Rectangle { radius: 15; color: "transparent"; border { color: plateField.activeFocus ? appTheme.activeColor : "#D1D5DB"; width: plateField.activeFocus ? 2 : 1 } }
+                        
+                        HoverHandler { id: plateHover }
+                        transform: Translate { y: plateHover.hovered ? -2 : 0; Behavior on y { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } } }
+
+                        Rectangle {
+                            visible: plateField.text !== ""
+                            width: 20; height: 20; radius: 10; anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
+                            color: plateClearHover.hovered ? "#E5E7EB" : "transparent"
+                            Image { anchors.centerIn: parent; source: "../../../../assets/icons/close.svg"; sourceSize: Qt.size(10, 10); opacity: 0.6 }
+                            HoverHandler { id: plateClearHover; cursorShape: Qt.PointingHandCursor }
+                            TapHandler { onTapped: plateField.text = "" }
+                        }
+                    }
+                }
+
+                // > model
+                ColumnLayout {
+                    Layout.fillWidth: true; spacing: 6
+                    Text { 
+                        text: "Model <font color='#E53935'>*</font>"
+                        textFormat: Text.RichText
+                        font { pixelSize: 13; family: appTheme.inclusiveSansFontName }
+                        color: "#333" 
+                    }
+                    TextField {
+                        id: modelField
+                        Layout.fillWidth: true; Layout.preferredHeight: 30
+                        placeholderText: "e.g. Honda"; leftPadding: 12; rightPadding: 32
+                        font { pixelSize: 13; family: appTheme.rethinkSansFontName }
+                        color: "#333"
+                        placeholderTextColor: "#AAAAAA"
+                        background: Rectangle { radius: 15; color: "transparent"; border { color: modelField.activeFocus ? appTheme.activeColor : "#D1D5DB"; width: modelField.activeFocus ? 2 : 1 } }
+                        
+                        HoverHandler { id: modelHover }
+                        transform: Translate { y: modelHover.hovered ? -2 : 0; Behavior on y { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } } }
+
+                        Rectangle {
+                            visible: modelField.text !== ""
+                            width: 20; height: 20; radius: 10; anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
+                            color: modelClearHover.hovered ? "#E5E7EB" : "transparent"
+                            Image { anchors.centerIn: parent; source: "../../../../assets/icons/close.svg"; sourceSize: Qt.size(10, 10); opacity: 0.6 }
+                            HoverHandler { id: modelClearHover; cursorShape: Qt.PointingHandCursor }
+                            TapHandler { onTapped: modelField.text = "" }
+                        }
+                    }
+                }
+
+                // > registration date
+                ColumnLayout {
+                    Layout.fillWidth: true; spacing: 6
+                    Text { 
+                        text: "Registration date <font color='#E53935'>*</font>"
+                        textFormat: Text.RichText
+                        font { pixelSize: 13; family: appTheme.inclusiveSansFontName }
+                        color: "#333" 
+                    }
+                    TextField {
+                        id: regDateField
+                        Layout.fillWidth: true; Layout.preferredHeight: 30
+                        leftPadding: 12; rightPadding: regDateField.text === "" ? todayBtn.width + 12 : 32
+                        font { pixelSize: 13; family: appTheme.rethinkSansFontName }
+                        color: "#333"
+                        placeholderTextColor: "#AAAAAA"
+                        background: Rectangle { radius: 15; color: "transparent"; border { color: regDateField.activeFocus ? appTheme.activeColor : "#D1D5DB"; width: regDateField.activeFocus ? 2 : 1 } }
+                        
+                        HoverHandler { id: regHover }
+                        transform: Translate { y: regHover.hovered ? -2 : 0; Behavior on y { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } } }
+
+                        Rectangle {
+                            id: todayBtn
+                            visible: regDateField.text === ""
+                            anchors { right: parent.right; rightMargin: 6; verticalCenter: parent.verticalCenter }
+                            height: 24; width: todayRow.implicitWidth + 16; radius: 12
+                            color: todayHover.hovered ? "#E5E7EB" : "transparent"
+                            Row {
+                                id: todayRow
+                                anchors.centerIn: parent; spacing: 4
+                                Image { source: "../../../../assets/icons/calendar.svg"; sourceSize: Qt.size(12, 12); opacity: 0.6; anchors.verticalCenter: parent.verticalCenter }
+                                Text { 
+                                    text: "Use today's date"
+                                    font { pixelSize: 11; family: appTheme.inclusiveSansFontName }
+                                    color: "#555"
+                                    anchors.verticalCenter: parent.verticalCenter 
+                                }
+                            }
+                            HoverHandler { id: todayHover; cursorShape: Qt.PointingHandCursor }
+                            TapHandler { onTapped: regDateField.text = Qt.formatDate(new Date(), "MMM dd, yyyy") }
+                        }
+
+                        Rectangle {
+                            visible: regDateField.text !== ""
+                            width: 20; height: 20; radius: 10; anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
+                            color: regClearHover.hovered ? "#E5E7EB" : "transparent"
+                            Image { anchors.centerIn: parent; source: "../../../../assets/icons/close.svg"; sourceSize: Qt.size(10, 10); opacity: 0.6 }
+                            HoverHandler { id: regClearHover; cursorShape: Qt.PointingHandCursor }
+                            TapHandler { onTapped: regDateField.text = "" }
+                        }
+                    }
+                }
+
+                // > daily rate
+                ColumnLayout {
+                    Layout.fillWidth: true; spacing: 6
+                    Text { 
+                        text: "Daily rate (₱) <font color='#E53935'>*</font>"
+                        textFormat: Text.RichText
+                        font { pixelSize: 13; family: appTheme.inclusiveSansFontName }
+                        color: "#333" 
+                    }
+                    TextField {
+                        id: rateField
+                        Layout.fillWidth: true; Layout.preferredHeight: 30
+                        placeholderText: "300"; leftPadding: 12; rightPadding: 32
+                        font { pixelSize: 13; family: appTheme.rethinkSansFontName }
+                        color: "#333"
+                        placeholderTextColor: "#AAAAAA"
+                        inputMethodHints: Qt.ImhFormattedNumbersOnly
+                        validator: RegularExpressionValidator { regularExpression: /^\d*\.?\d*$/ }
+                        background: Rectangle { radius: 15; color: "transparent"; border { color: rateField.activeFocus ? appTheme.activeColor : "#D1D5DB"; width: rateField.activeFocus ? 2 : 1 } }
+                        
+                        HoverHandler { id: rateHover }
+                        transform: Translate { y: rateHover.hovered ? -2 : 0; Behavior on y { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } } }
+
+                        Rectangle {
+                            visible: rateField.text !== ""
+                            width: 20; height: 20; radius: 10; anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
+                            color: rateClearHover.hovered ? "#E5E7EB" : "transparent"
+                            Image { anchors.centerIn: parent; source: "../../../../assets/icons/close.svg"; sourceSize: Qt.size(10, 10); opacity: 0.6 }
+                            HoverHandler { id: rateClearHover; cursorShape: Qt.PointingHandCursor }
+                            TapHandler { onTapped: rateField.text = "" }
+                        }
+                    }
+                }
+
+                // > status
+                ColumnLayout {
+                    Layout.fillWidth: true; spacing: 6; z: 5 
+                    Text { 
+                        text: "Status <font color='#E53935'>*</font>"
+                        textFormat: Text.RichText
+                        font { pixelSize: 13; family: appTheme.inclusiveSansFontName }
+                        color: "#333" 
+                    }
+                    Components.DropdownChip {
+                        id: statusChip
+                        Layout.fillWidth: true; Layout.preferredHeight: 30; menuWidth: statusChip.width 
+                        isSmall: true; label: "Select Status"; model: ["Available", "Rented", "Under Maintenance"]
+                    }
+                }
+
+                // > photo upload
+                ColumnLayout {
+                    Layout.fillWidth: true; spacing: 6
+                    Text { 
+                        text: "Photo of the Unit"
+                        font { pixelSize: 13; family: appTheme.inclusiveSansFontName }
+                        color: "#333" 
+                    }
+                    FileDialog { id: imageDialog; title: "Select an Image"; nameFilters: ["Image files (*.png *.jpg *.jpeg)"]; onAccepted: photoUpload.photoPath = selectedFile }
+
+                    Rectangle {
+                        id: photoUpload
+                        property string photoPath: ""
+                        Layout.fillWidth: true; height: 90; radius: 12
+                        color: {
+                            if (photoUpload.photoPath !== "")
+                                return "#C2E7FF"
+                            else if (dropArea.containsDrag)
+                                return "#EBF3FB"
+                            else
+                                return "transparent"
+                        }
+                        border { 
+                            color: dropArea.containsDrag ? appTheme.activeColor : "#888888"
+                            width: photoUpload.photoPath !== "" ? 0 : 0.75 
+                        }
+                        
+                        HoverHandler { id: photoHover; cursorShape: Qt.PointingHandCursor }
+                        transform: Translate { y: photoHover.hovered ? -2 : 0; Behavior on y { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } } }
+
+                        Column {
+                            anchors.centerIn: parent; spacing: 4
+                            Image { anchors.horizontalCenter: parent.horizontalCenter; source: "../../../../assets/icons/upload.svg"; sourceSize: Qt.size(28, 28); opacity: 0.55 }
+                            Text {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                text: photoUpload.photoPath !== "" ? photoUpload.photoPath : "Browse Files"
+                                font { pixelSize: 13; bold: true; family: appTheme.rethinkSansFontName }
+                                color: "#444"
+                                elide: Text.ElideMiddle
+                                width: Math.min(implicitWidth, photoUpload.width - 32) 
+                            }
+                            Text {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                text: "Drag and Drop Files"
+                                font { pixelSize: 11; family: appTheme.inclusiveSansFontName }
+                                color: "#888"
+                                visible: photoUpload.photoPath === ""
+                            }
+                        }
+
+                        Rectangle {
+                            visible: photoUpload.photoPath !== ""
+                            anchors { top: parent.top; right: parent.right; margins: 6 }
+                            width: 20; height: 20; radius: 10
+                            color: clearPhotoHover.hovered ? "#1A001D35" : "transparent"
+                            Image {
+                                anchors.centerIn: parent
+                                source: "../../../../assets/icons/close.svg"
+                                sourceSize: Qt.size(12, 12)
+                                opacity: 1.0 
+                            }
+                            HoverHandler { id: clearPhotoHover; cursorShape: Qt.PointingHandCursor }
+                            TapHandler { onTapped: photoUpload.photoPath = "" }
+                        }
+
+                        DropArea { id: dropArea; anchors.fill: parent; onDropped: (drop) => { if (drop.hasUrls) photoUpload.photoPath = drop.urls[0] } }
+                        TapHandler { onTapped: imageDialog.open() }
                     }
                 }
             }
         }
 
-        // > photo upload
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 6
-
-            Text {
-                text: "Photo of the Unit <font color='#E53935'>*</font>"
-                textFormat: Text.RichText
-                font { pixelSize: 13; family: appTheme.rethinkSansFontName }
-                color: "#333"
-            }
-
-            Rectangle {
-                id: photoUpload
-                property string photoPath: ""
-
-                Layout.fillWidth: true
-                height: 90; radius: 12
-                color: dropArea.containsDrag ? "#EBF3FB" : "white"
-                border { color: dropArea.containsDrag ? appTheme.activeColor : "#C0C7D0"; width: 1.5 }
-                Behavior on color { ColorAnimation { duration: 120 } }
-
-                Column {
-                    anchors.centerIn: parent
-                    spacing: 4
-
-                    Image {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        source: "../../../../assets/icons/upload.svg"
-                        sourceSize: Qt.size(28, 28)
-                        opacity: 0.55
-                    }
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: photoUpload.photoPath !== "" ? photoUpload.photoPath : "Browse Files"
-                        font { pixelSize: 13; bold: true; family: appTheme.rethinkSansFontName }
-                        color: "#444"
-                        elide: Text.ElideMiddle
-                        width: Math.min(implicitWidth, photoUpload.width - 32)
-                    }
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: "Drag and Drop Files"
-                        font { pixelSize: 11; family: appTheme.rethinkSansFontName }
-                        color: "#888"
-                        visible: photoUpload.photoPath === ""
-                    }
-                }
-
-                // >> clear photo button
-                Rectangle {
-                    visible: photoUpload.photoPath !== ""
-                    anchors { top: parent.top; right: parent.right; margins: 6 }
-                    width: 20; height: 20; radius: 10
-                    color: clearPhotoHover.hovered ? "#E5E7EB" : "#F3F4F6"
-                    Behavior on color { ColorAnimation { duration: 100 } }
-
-                    Text { anchors.centerIn: parent; text: "✕"; font.pixelSize: 11; color: "#555" }
-
-                    HoverHandler { id: clearPhotoHover; cursorShape: Qt.PointingHandCursor }
-                    TapHandler { onTapped: photoUpload.photoPath = "" }
-                }
-
-                DropArea {
-                    id: dropArea
-                    anchors.fill: parent
-                    onDropped: (drop) => { if (drop.hasUrls) photoUpload.photoPath = drop.urls[0] }
-                }
-
-                HoverHandler { cursorShape: Qt.PointingHandCursor }
-            }
-
-        }
-
-        // > action buttons-------------------------
-
+        // > action buttons
         RowLayout {
-            Layout.fillWidth: true
-            spacing: 8
-
+            Layout.fillWidth: true; spacing: 8
             Item { Layout.fillWidth: true }
-
-
-            // CANCEL BUTTON--------------------------------------
-            Rectangle {
-                implicitWidth: 90; implicitHeight: 36; radius: 10
-                color: cancelHover.hovered ? "#C8CDD4" : "#D4D9DF"
-                Behavior on color { ColorAnimation { duration: 100 } }
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "Cancel"
-                    font { pixelSize: 13; family: appTheme.rethinkSansFontName }
-                    color: "#333"
-                }
-                HoverHandler { id: cancelHover; cursorShape: Qt.PointingHandCursor }
-                TapHandler { onTapped: root.close() }
+            Components.SecondaryButton {
+                text: "Cancel"; Layout.preferredHeight: 32; onClicked: root.close()
+                enableAnimate: true
             }
-
-
-            //SAVE CHANGES BUTTON---------------------------------------
-            Rectangle {
-                implicitWidth: 110; implicitHeight: 36; radius: 10
-                color: saveHover.hovered ? Qt.darker(appTheme.activeColor, 1.08) : appTheme.activeColor
-                Behavior on color { ColorAnimation { duration: 100 } }
-
-                // Disable if required fields are empty
-                opacity: (plateField.text !== "" && modelField.text !== "" && rateField.text !== "") ? 1.0 : 0.5
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "Save Changes"
-                    font { pixelSize: 13; bold: true; family: appTheme.rethinkSansFontName }
-                    color: "black"
-                }
-
-
-                HoverHandler { id: saveHover; cursorShape: Qt.PointingHandCursor }
-            
-                    TapHandler {
-                    onTapped: {
-                        if (plateField.text === "" || modelField.text === "" || rateField.text === "")
-                            return
-                        root.saveClicked({
-                            plate:   plateField.text,
-                            model:   modelField.text,
-                            regDate: regDateField.text,
-                            rate:    rateField.text,
-                            photo:   photoUpload.photoPath
-                        })
-                        root.close()
+            Components.PrimaryButton {
+                text: "Save Changes"; Layout.preferredHeight: 32
+                enableAnimate: true
+                enabled: plateField.text !== "" && modelField.text !== "" && rateField.text !== "" && statusChip.selectedValue !== ""
+                opacity: enabled ? 1.0 : 0.5
+                onClicked: {
+                    if (!enabled) return
+                    
+                    let newData = {
+                        plateNumber: plateField.text,
+                        unitModel: modelField.text,
+                        registrationDate: regDateField.text,
+                        dailyRate: rateField.text,
+                        unitStatus: statusChip.selectedValue,
+                        unitPicture: photoUpload.photoPath
                     }
+                    
+                    root.saveClicked(root.unitData, newData)
+                    root.close()
                 }
             }
         }

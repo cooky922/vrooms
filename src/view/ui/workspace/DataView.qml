@@ -90,11 +90,14 @@ Item {
                 visible: appDataViewController.totalItemCount > 0
 
                 onEditRowRequested: function(rowIndex) {
+                    let rowData = appDataTableModel.getRowData(rowIndex)
+                    editUnitDialog.unitData = rowData
                     editUnitDialog.open()
                 }
 
                 onDeleteRowRequested: function(rowIndex) {
                     deleteDialog.entityName = workspaceScreen.currentView.slice(0, -1)
+                    deleteDialog.oldData = appDataTableModel.getRowData(rowIndex)
                     deleteDialog.open()
                 }
             }

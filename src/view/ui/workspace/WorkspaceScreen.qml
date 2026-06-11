@@ -156,23 +156,28 @@ Item {
             }
         }
 
-        // > dialogs---------
-
+        // > dialogs
         AddUnitDialog {
             id: addUnitDialog
             onAddClicked: function(data) {
-                console.log("Add clicked:", JSON.stringify(data))
+                appUtils.printLog(JSON.stringify(data));
+                appDataViewController.addRecord(data);
             }
         }
 
         EditUnitDialog {
             id: editUnitDialog
+            onSaveClicked: function(oldData, newData) {
+                appUtils.printLog(JSON.stringify(newData));
+                appDataViewController.updateRecord(oldData, newData);
+            }
         }
 
-        DeleteUnitDialog {
+        DeleteDialog {
             id: deleteDialog
-            onDeleteConfirmed: function() {
-                console.log("Delete confirmed")
+            onDeleteClicked: function(oldData) {
+                appUtils.printLog("Delete confirmed");
+                appDataViewController.deleteRecord(oldData);
             }
         }
     }

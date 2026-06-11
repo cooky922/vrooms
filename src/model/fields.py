@@ -11,11 +11,11 @@ class FieldInfo:
 
 class UnitField(Enum):
     PLATE_NUMBER      = FieldInfo('plateNumber',      'Plate Number',      required=True,  max_length=15)
-    UNIT_MODEL        = FieldInfo('unitModel',        'Model',        required=True,  max_length=50)
-    UNIT_PICTURE      = FieldInfo('unitPicture',      'Picture',      required=False, max_length=255)
-    UNIT_STATUS       = FieldInfo('unitStatus',       'Status',       required=True)
+    UNIT_MODEL        = FieldInfo('unitModel',        'Model',             required=True,  max_length=50)
+    UNIT_PICTURE      = FieldInfo('unitPicture',      'Picture',           required=False, max_length=255)
+    UNIT_STATUS       = FieldInfo('unitStatus',       'Status',            required=True)
     DAILY_RATE        = FieldInfo('dailyRate',        'Daily Rate',        required=True)
-    REGISTRATION_DATE = FieldInfo('registrationDate', 'Start Date', required=True)
+    REGISTRATION_DATE = FieldInfo('registrationDate', 'Start Date',        required=True)
 
     @staticmethod
     def from_internal_name(name: str) -> 'UnitField':
