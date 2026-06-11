@@ -9,10 +9,15 @@ Popup {
     bottomPadding: 8
     leftPadding: 0
     rightPadding: 0
+    margins: 0 
     
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
     default property alias menuItems: contentLayout.data
+
+    property bool smartPositioning: false 
+    property real yOffset: 4
+    property bool _isUpward: false
 
     property real _lastCloseTime: 0
     
@@ -20,6 +25,22 @@ Popup {
         if (!opened) {
             _lastCloseTime = Date.now()
         }
+    }
+
+    onAboutToShow: {
+        if (smartPositioning && parent) {
+            let pos = parent.mapToItem(null, 0, parent.height)
+            let winHeight = parent.Window.height
+            _isUpward = (pos.y + root.implicitHeight > winHeight - 16)
+        }
+    }
+
+    Binding {
+        target: root
+        property: "y"
+        value: root._isUpward ? (-root.height - root.yOffset) : (root.parent ? root.parent.height + root.yOffset : 0)
+        when: root.smartPositioning
+        restoreMode: Binding.RestoreBinding
     }
 
     function toggle() {
@@ -33,30 +54,30 @@ Popup {
         }
     }
 
-    background: Item {        
-        Rectangle {
-            id: bgShape
-            anchors.fill: parent
-            radius: 6 
-            color: "#FFFFFF"
-            visible: false
-        }
+    property real slideOffset: 0
 
-        MultiEffect {
-            source: bgShape
-            anchors.fill: bgShape
-            autoPaddingEnabled: true
+    background: Rectangle {
+        color: "#FFFFFF"
+        radius: 6 
+
+        transform: Translate { y: root.slideOffset }
+
+        layer.enabled: true
+        layer.effect: MultiEffect {
             shadowEnabled: true
-            shadowColor: "#44000000"
-            shadowHorizontalOffset: 2
+            shadowColor: "#44000000" 
+            shadowHorizontalOffset: 2 
             shadowVerticalOffset: 4
             shadowBlur: 1.0
+            autoPaddingEnabled: true
         }
     }
 
     contentItem: ColumnLayout {
         id: contentLayout
         spacing: 2 
+
+        transform: Translate { y: root.slideOffset }
 
         function injectMenuReference() {
             for (let i = 0; i < children.length; i++) {
@@ -70,19 +91,17 @@ Popup {
         onChildrenChanged: injectMenuReference()
     }
 
-    property real slideOffset: 0
-
     enter: Transition {
         ParallelAnimation {
             NumberAnimation { property: "opacity"; from: 0.0; to: 1.0; duration: 150; easing.type: Easing.OutQuad }
-            NumberAnimation { property: "slideOffset"; from: -10; to: 0; duration: 150; easing.type: Easing.OutQuad }
+            NumberAnimation { property: "slideOffset"; from: root._isUpward ? 10 : -10; to: 0; duration: 150; easing.type: Easing.OutQuad }
         }
     }
 
     exit: Transition {
         ParallelAnimation {
             NumberAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: 100; easing.type: Easing.InQuad }
-            NumberAnimation { property: "slideOffset"; from: 0; to: -10; duration: 100; easing.type: Easing.InQuad }
+            NumberAnimation { property: "slideOffset"; from: 0; to: root._isUpward ? 10 : -10; duration: 100; easing.type: Easing.InQuad }
         }
     }
 }

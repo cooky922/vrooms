@@ -288,8 +288,9 @@ Rectangle {
 
                         Components.ContextMenu {
                             id: rowMenu
-                            y: parent.height + 3 + (rowMenu.slideOffset !== undefined ? rowMenu.slideOffset : 0)
-                            x: parent.width - width
+                            // y: 3 + (rowMenu.slideOffset !== undefined ? rowMenu.slideOffset : 0)
+                            x: parent.width - width + 6
+                            smartPositioning: true
                             
                             Components.ContextMenuItem {
                                 text: "Edit"
