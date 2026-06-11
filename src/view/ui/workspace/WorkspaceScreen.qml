@@ -151,15 +151,6 @@ Item {
                             if (activeTabName !== "Dashboard")
                                 appDataViewController.reselectEntity(activeTabName)
                         }
-
-                        onEditRowRequested: function(rowIndex) {
-                            editUnitDialog.open()
-                        }
-
-                        onDeleteRowRequested: function(rowIndex) {
-                            deleteDialog.entityName = workspaceScreen.currentView.slice(0, -1)
-                            deleteDialog.open()
-                        }
                     }
                 }
             }

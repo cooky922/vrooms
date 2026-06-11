@@ -34,8 +34,8 @@ Item {
 
                 Components.ContextMenu {
                     id: userMenu
-                    y: parent.height - 12 + (userMenu.slideOffset !== undefined ? userMenu.slideOffset : 0)
-                    x: parent.width - width + 16
+                    y: parent.height + 6 + (userMenu.slideOffset !== undefined ? userMenu.slideOffset : 0)
+                    x: parent.width - width
                     
                     Components.ContextMenuItem {
                         text: "Logout"

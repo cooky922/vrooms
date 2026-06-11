@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Effects
 import QtQuick.Layouts
 
@@ -14,6 +15,8 @@ Item {
     property string text: ""
     property string iconName: ""
     property string shortcutText: ""
+    property color itemColor: "transparent" 
+    property bool autoClose: true 
 
     property var hostMenu: null
     
@@ -32,7 +35,18 @@ Item {
         id: hoverBg
         anchors.fill: parent
         radius: 4 
-        color: mouseArea.pressed ? "#E5E7EB" : (mouseArea.containsMouse ? "#F3F4F6" : "transparent")
+        
+        color: {
+            if (root.itemColor.a === 0) {
+                if (mouseArea.pressed) return "#E5E7EB"
+                if (mouseArea.containsMouse) return "#F3F4F6"
+                return "transparent"
+            } else {
+                if (mouseArea.pressed) return Qt.rgba(root.itemColor.r, root.itemColor.g, root.itemColor.b, 0.15)
+                if (mouseArea.containsMouse) return Qt.rgba(root.itemColor.r, root.itemColor.g, root.itemColor.b, 0.1)
+                return "transparent"
+            }
+        }
     }
 
     Item {
@@ -58,14 +72,15 @@ Item {
                     sourceSize.width: 16
                     sourceSize.height: 16
                     anchors.fill: parent
-                    visible: false
+                    visible: false 
                 }
 
                 MultiEffect {
                     source: itemIconImg
                     anchors.fill: itemIconImg
-                    colorizationColor: "#4B5563"
+                    colorizationColor: root.itemColor.a === 0 ? "#333333" : root.itemColor
                     colorization: 1.0
+                    brightness: 1.0 
                 }
             }
 
@@ -74,7 +89,7 @@ Item {
                 font.family: appTheme.inclusiveSansFontName
                 font.pixelSize: 12
                 font.weight: Font.Medium
-                color: "#333333" 
+                color: root.itemColor.a === 0 ? "#333333" : root.itemColor
                 anchors.verticalCenter: parent.verticalCenter
             }
         }
@@ -98,7 +113,7 @@ Item {
         cursorShape: Qt.PointingHandCursor
         
         onClicked: {
-            if (root.hostMenu) {
+            if (root.autoClose && root.hostMenu) {
                 root.hostMenu.visible = false
                 root.hostMenu.close()
             }

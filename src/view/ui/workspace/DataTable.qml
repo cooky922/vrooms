@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "../../components" as Components
 
 Rectangle {
     id: root
@@ -253,103 +254,59 @@ Rectangle {
                     }
 
                     Rectangle {
-                        width: parent.width; height: 1
+                        width: parent.width
+                        height: 1
                         anchors.bottom: parent.bottom
                         color: "#E5E7EB"
                     }
 
                     Rectangle {
-                        width: 28; height: 28; radius: 14
+                        width: 28
+                        height: 28
+                        radius: 14
                         anchors.centerIn: parent
                         color: moreHover.hovered || moreTap.pressed ? "#E5E7EB" : "transparent"
                         scale: moreTap.pressed ? 0.95 : 1.0
                         Behavior on scale { NumberAnimation { duration: 100 } }
 
-                        Text {
+                        Image {
                             anchors.centerIn: parent
-                            text: "⋯"
-                            font.pixelSize: 16
-                            color: "#555"
+                            source: "../../../../assets/icons/more.svg"
+                            sourceSize: Qt.size(16, 16)
+                            opacity: 0.7
                         }
 
-                        HoverHandler { id: moreHover; cursorShape: Qt.PointingHandCursor }
-                        TapHandler { id: moreTap; onTapped: rowMenu.open() }
+                        HoverHandler { 
+                            id: moreHover
+                            cursorShape: Qt.PointingHandCursor 
+                        }
 
-                        Popup {
+                        TapHandler { 
+                            id: moreTap
+                            onTapped: rowMenu.toggle()
+                        }
+
+                        Components.ContextMenu {
                             id: rowMenu
-                            x: -110; y: 0
-                            width: 130
-                            padding: 6
-                            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-
-                            background: Rectangle {
-                                color: "#FAFAFA"
-                                radius: 10
-                                border.color: "#E0E0E0"
-                                border.width: 1
+                            y: parent.height + 3 + (rowMenu.slideOffset !== undefined ? rowMenu.slideOffset : 0)
+                            x: parent.width - width
+                            
+                            Components.ContextMenuItem {
+                                text: "Edit"
+                                iconName: "edit"
+                                onTriggered: {
+                                    rowMenu.close()
+                                    root.editRowRequested(index)
+                                }
                             }
 
-                            contentItem: Column {
-                                spacing: 2
-
-                                //------------------Edit button-----------------
-                                Rectangle {
-                                    width: 118; height: 36; radius: 8
-                                    color: editHov.hovered ? "#F0F0F0" : "transparent"
-                                    Behavior on color { ColorAnimation { duration: 80 } }
-
-                                    Row {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        anchors.left: parent.left
-                                        anchors.leftMargin: 12
-                                        spacing: 8
-
-                                        Text {
-                                            text: "Edit"
-                                            font.pixelSize: 13
-                                            font.family: appTheme.rethinkSansFontName
-                                            color: "#333"
-                                        }
-                                    }
-
-                                    HoverHandler { id: editHov; cursorShape: Qt.PointingHandCursor }
-                                    TapHandler {
-                                        onTapped: {
-                                            rowMenu.close()
-                                            root.editRowRequested(index)
-                                        }
-                                    }
-                                }
-
-                                //------------------Delete button-----------
-                                Rectangle { width: 118; height: 1; color: "#E8E8E8" }
-
-                                Rectangle {
-                                    width: 118; height: 36; radius: 8
-                                    color: delHov.hovered ? "#FFF0F0" : "transparent"
-                                    Behavior on color { ColorAnimation { duration: 80 } }
-
-                                    Row {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        anchors.left: parent.left
-                                        anchors.leftMargin: 12
-                                        spacing: 8
-
-                                        Text {
-                                            text: "Delete"
-                                            font.pixelSize: 13
-                                            font.family: appTheme.rethinkSansFontName
-                                            color: "#E53935"
-                                        }
-                                    }
-
-                                    HoverHandler { id: delHov; cursorShape: Qt.PointingHandCursor }
-                                    TapHandler {
-                                        onTapped: {
-                                            rowMenu.close()
-                                            root.deleteRowRequested(index)
-                                        }
-                                    }
+                            Components.ContextMenuItem {
+                                text: "Delete"
+                                iconName: "delete"
+                                itemColor: "#EF4444"
+                                onTriggered: {
+                                    rowMenu.close()
+                                    root.deleteRowRequested(index)
                                 }
                             }
                         }

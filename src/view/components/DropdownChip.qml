@@ -223,8 +223,8 @@ Item {
     // > dropdown menu
     Components.ContextMenu {
         id: chipMenu
-        y: root.height - 12 + (chipMenu.slideOffset !== undefined ? chipMenu.slideOffset : 0)
-        x: -16
+        y: root.height + 3 + (chipMenu.slideOffset !== undefined ? chipMenu.slideOffset : 0)
+        x: -3
 
         // NOTE: automatically generates options if the `model` array is used
         Repeater {

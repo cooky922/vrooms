@@ -5,16 +5,38 @@ import QtQuick.Layouts
 
 Popup {
     id: root
-    padding: 20 
+    topPadding: 8
+    bottomPadding: 8
+    leftPadding: 0
+    rightPadding: 0
+    
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
     default property alias menuItems: contentLayout.data
+
+    property real _lastCloseTime: 0
+    
+    onOpenedChanged: {
+        if (!opened) {
+            _lastCloseTime = Date.now()
+        }
+    }
+
+    function toggle() {
+        if (Date.now() - _lastCloseTime < 250) {
+            return;
+        }
+        if (opened) {
+            close();
+        } else {
+            open();
+        }
+    }
 
     background: Item {        
         Rectangle {
             id: bgShape
             anchors.fill: parent
-            anchors.margins: 16
             radius: 6 
             color: "#FFFFFF"
             visible: false
@@ -22,13 +44,8 @@ Popup {
 
         MultiEffect {
             source: bgShape
-            
-            x: bgShape.x
-            y: bgShape.y
-            width: bgShape.width
-            height: bgShape.height
-            
-            autoPaddingEnabled: true 
+            anchors.fill: bgShape
+            autoPaddingEnabled: true
             shadowEnabled: true
             shadowColor: "#44000000"
             shadowHorizontalOffset: 2

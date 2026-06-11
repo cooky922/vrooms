@@ -34,8 +34,8 @@ Item {
 
                 Components.ContextMenu {
                     id: userMenu
-                    y: parent.height - 12 + (userMenu.slideOffset !== undefined ? userMenu.slideOffset : 0)
-                    x: parent.width - width + 16
+                    y: parent.height + 6 + (userMenu.slideOffset !== undefined ? userMenu.slideOffset : 0)
+                    x: parent.width - width
                     
                     Components.ContextMenuItem {
                         text: "Logout"
@@ -62,7 +62,7 @@ Item {
                 isSmall: true
             }
 
-            Item { Layout.fillWidth: true } // Spacer
+            Item { Layout.fillWidth: true }
 
             Components.ToggleButtonGroup {
                 Components.ToggleButton { iconName: "table-view"; checked: true }
@@ -88,6 +88,15 @@ Item {
                 anchors.fill: parent
                 anchors.margins: 5
                 visible: appDataViewController.totalItemCount > 0
+
+                onEditRowRequested: function(rowIndex) {
+                    editUnitDialog.open()
+                }
+
+                onDeleteRowRequested: function(rowIndex) {
+                    deleteDialog.entityName = workspaceScreen.currentView.slice(0, -1)
+                    deleteDialog.open()
+                }
             }
 
             Components.InfoText {
