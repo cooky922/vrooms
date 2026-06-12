@@ -64,7 +64,7 @@ ColumnLayout {
             height: 24
             width: nowRow.implicitWidth + 16
             radius: 12
-            color: nowHover.hovered ? "#E5E7EB" : "transparent"
+            color: nowMouseArea.containsMouse ? "#E5E7EB" : "transparent"
             
             Row {
                 id: nowRow
@@ -85,18 +85,20 @@ ColumnLayout {
                     anchors.verticalCenter: parent.verticalCenter 
                 }
             }
-            
-            HoverHandler { 
-                id: nowHover
-                cursorShape: Qt.PointingHandCursor 
-            }
-            
-            TapHandler { 
-                onTapped: {
+
+            MouseArea {
+                id: nowMouseArea
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                preventStealing: true
+                
+                onClicked: (mouse) => {
                     var d = Qt.formatDateTime(new Date(), "yyyy-MM-dd HH:mm:ss")
                     field.text = d
                     root.inputValueChanged(root.fieldKey, d)
-                } 
+                    mouse.accepted = true
+                }
             }
         }
 
@@ -108,7 +110,7 @@ ColumnLayout {
             anchors.right: parent.right
             anchors.rightMargin: 8
             anchors.verticalCenter: parent.verticalCenter
-            color: clearHover.hovered ? "#E5E7EB" : "transparent"
+            color: clearMouseArea.containsMouse ? "#E5E7EB" : "transparent"
             
             Image { 
                 anchors.centerIn: parent
@@ -117,16 +119,18 @@ ColumnLayout {
                 opacity: 1.0
             }
             
-            HoverHandler { 
-                id: clearHover
-                cursorShape: Qt.PointingHandCursor 
-            }
-            
-            TapHandler { 
-                onTapped: { 
+            MouseArea {
+                id: clearMouseArea
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                preventStealing: true
+                
+                onClicked: (mouse) => {
                     field.text = ""
-                    root.inputValueChanged(root.fieldKey, "") 
-                } 
+                    root.inputValueChanged(root.fieldKey, "")
+                    mouse.accepted = true
+                }
             }
         }
     }

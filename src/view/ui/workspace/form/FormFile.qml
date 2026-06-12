@@ -60,13 +60,8 @@ ColumnLayout {
         border.color: root.isViewOnly ? "transparent" : (dropArea.containsDrag ? appTheme.activeColor : "#888888")
         border.width: (root.isViewOnly || (root.value && root.value !== "")) ? 0 : 0.75
         
-        HoverHandler { 
-            id: fileHover
-            cursorShape: root.isViewOnly ? Qt.ArrowCursor : Qt.PointingHandCursor 
-        }
-        
         transform: Translate { 
-            y: (fileHover.hovered && !root.isViewOnly) ? -2 : 0
+            y: (fileMouseArea.containsMouse && !root.isViewOnly) ? -2 : 0
             Behavior on y { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } } 
         }
 
@@ -161,7 +156,14 @@ ColumnLayout {
             
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: (root.value && root.value !== "") ? root.value : "Browse Files"
+                text: {
+                    if (root.value === undefined || root.value === null || root.value === "")
+                        return "Browse Files"
+                    let rawString = root.value.toString()
+                    let localPath = rawString.replace(/^(file:\/{3})/, "")
+                    let cleanPath = decodeURIComponent(localPath)
+                    return cleanPath
+                }
                 font { pixelSize: 13; bold: true; family: appTheme.rethinkSansFontName }
                 color: "#444"
                 elide: Text.ElideMiddle
@@ -218,10 +220,19 @@ ColumnLayout {
                 }
             } 
         }
-        
-        TapHandler { 
+
+        MouseArea { 
+            id: fileMouseArea
+            anchors.fill: parent
+            hoverEnabled: true
             enabled: !root.isViewOnly
-            onTapped: imageDialog.open() 
+            preventStealing: true
+            cursorShape: root.isViewOnly ? Qt.ArrowCursor : Qt.PointingHandCursor
+            onClicked: (mouse) => {
+                imageDialog.open() 
+                mouse.accepted = true
+            }
+
         }
     }
 }
