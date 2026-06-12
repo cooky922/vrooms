@@ -19,8 +19,9 @@ Item {
             Layout.preferredHeight: 30
 
             Components.SearchBar {
-                Layout.preferredWidth: 300
+                Layout.preferredWidth: 350
                 placeholderText: "Search " + root.activeTabName + "..."
+                text: appDataViewController.searchText
             }
             
             Item { Layout.fillWidth: true }

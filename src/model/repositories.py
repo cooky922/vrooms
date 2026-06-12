@@ -1,5 +1,5 @@
 from typing import Optional
-from src.database import SQLDatabase, Filter, Sorted, Paged, Search
+from src.database import SQLDatabase, Filter, Sorted, Paged, Search, SearchMatchType
 from .entity_kind import EntityKind
 from .errors import DatabaseError
 from .fields import (
@@ -16,18 +16,27 @@ from .validators import (
 def _build_where(search: Optional[Search], columns: list[str]) -> tuple[str, list]:
     if not search or not search.text:
         return '', []
+    
+    op = '=' if search.match_type == SearchMatchType.EXACTLY else 'LIKE'
+    pattern = ''
+    match search.match_type:
+        case SearchMatchType.CONTAINS:
+            pattern = f'%{search.text}%' 
+        case SearchMatchType.EXACTLY:
+            pattern = search.text
+        case SearchMatchType.STARTS_WITH:
+            pattern = f'{search.text}%'
+        case SearchMatchType.ENDS_WITH:
+            pattern = f'%{search.text}'
+    
     params = []
     if search.field:
-        if search.prefix_match:
-            clause = f'WHERE LOWER({search.field}) LIKE ?'
-            params.append(search.text + '%')
-        else:
-            clause = f'WHERE LOWER({search.field}) LIKE ?'
-            params.append('%' + search.text + '%')
+        clause = f'WHERE LOWER({search.field}) {op} ?'
+        params.append(pattern.lower())
     else:
-        parts = [f'LOWER({col}) LIKE ?' for col in columns]
+        parts = [f'LOWER({col}) {op} ?' for col in columns]
         clause = 'WHERE ' + ' OR '.join(parts)
-        params = ['%' + search.text + '%'] * len(columns)
+        params = [pattern.lower()] * len(columns)
     return clause, params
 
 def _build_order(sorted_: Optional[Sorted]) -> str:

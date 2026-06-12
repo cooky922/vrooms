@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from typing import Optional
 
 @dataclass
@@ -31,8 +32,14 @@ class Paged:
     def Stream(size: int) -> 'Paged':
         return Paged(size=size, index=None)
 
+class SearchMatchType(Enum):
+    CONTAINS = 0
+    EXACTLY = 1
+    STARTS_WITH = 2
+    ENDS_WITH = 3
+
 @dataclass
 class Search:
     text: str
     field: Optional[str] = None
-    prefix_match: bool = False
+    match_type: SearchMatchType = SearchMatchType.CONTAINS

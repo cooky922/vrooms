@@ -1,6 +1,6 @@
 import math
 from PyQt6.QtCore import QObject, QUrl, pyqtSlot, pyqtProperty, pyqtSignal
-from src.database import Filter, Paged, Sorted, Search
+from src.database import Filter, Paged, Sorted, Search, SearchMatchType
 from src.model import (
     EntityKind,
     ValidationError,
@@ -38,13 +38,13 @@ class QMLDataViewController(QObject):
         self._total_item_count = 0
 
         self._filter_options = {}
-        self.resetFilterOptions()
 
         self._sort_field_index = 0
         self._sort_ascending = True
 
         self._search_text = ''
         self._search_filter_index = 0
+        self._search_match_type = SearchMatchType.CONTAINS
 
         self.refreshTable()
 
@@ -89,6 +89,10 @@ class QMLDataViewController(QObject):
     @pyqtProperty(int, notify=searchChanged)
     def searchFilterIndex(self): return self._search_filter_index
 
+    @pyqtProperty(int, notify=searchChanged)
+    def searchMatchType(self): 
+        return self._search_match_type.value
+
     @pyqtProperty('QVariantList', notify=selectedEntityChanged)
     def selectedEntityTransformedModel(self):
         fields = self.entity_kind.get_model()
@@ -131,11 +135,11 @@ class QMLDataViewController(QObject):
                 'payment':   EntityKind.PAYMENT,
                 'liability': EntityKind.LIABILITY,
             }
-            self.entity_kind         = kind_map.get(entity_name, EntityKind.UNIT)
-            self._page_index         = 0
-            self._sort_field_index   = 0
-            self._sort_ascending     = True
-            self._search_filter_index = 0
+            self.entity_kind = kind_map.get(entity_name, EntityKind.UNIT)
+            self._page_index = 0
+            self._sort_field_index = 0
+            self._sort_ascending = True
+            self.resetSearchOptions()
             self.resetFilterOptions()
             self.sortStateChanged.emit()
             self.selectedEntityChanged.emit()
@@ -150,13 +154,30 @@ class QMLDataViewController(QObject):
             self.paginationChanged.emit()
             self.refreshTable()
 
+    @pyqtSlot()
+    def resetSearchOptions(self):
+        self._search_text = ''
+        self._search_filter_index = 0
+        self._search_match_type = SearchMatchType.CONTAINS
+        self.searchChanged.emit()
+
     @pyqtSlot(int)
     def setSearchFilterIndex(self, index: int):
         if self._search_filter_index != index:
             self._search_filter_index = index
+            self.searchChanged.emit()
             if self._search_text.strip():
                 self._page_index = 0
-                self.searchChanged.emit()
+                self.refreshTable()
+
+    @pyqtSlot(int)
+    def setSearchMatchType(self, index : int):
+        new_match_type = SearchMatchType(index) 
+        if self._search_match_type != new_match_type:
+            self._search_match_type = new_match_type
+            self.searchChanged.emit()
+            if self._search_text.strip():
+                self._page_index = 0
                 self.refreshTable()
 
     def resetFilterOptions(self):
@@ -238,8 +259,7 @@ class QMLDataViewController(QObject):
         self._page_index          = 0
         self._sort_field_index    = 0
         self._sort_ascending      = True
-        self._search_text         = ''
-        self._search_filter_index = 0
+        self.resetSearchOptions()
         self.resetFilterOptions()
         self.sortStateChanged.emit()
         self.selectedEntityChanged.emit()
@@ -370,10 +390,10 @@ class QMLDataViewController(QObject):
         if self._search_text:
             text = self._search_text.strip().lower()
             if self._search_filter_index == 0:
-                search_request = Search(text=text, prefix_match=False)
+                search_request = Search(text=text, match_type=self._search_match_type)
             else:
                 field = columns[self._search_filter_index - 1]
-                search_request = Search(text=text, field=field, prefix_match=False)
+                search_request = Search(text=text, field=field, match_type=self._search_match_type)
 
         paged_request  = Paged.Specific(index=self._page_index + 1, size=self._page_size)
         sorted_request = Sorted.By(column=columns[self._sort_field_index], ascending=self._sort_ascending)
