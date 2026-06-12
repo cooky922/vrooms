@@ -1,14 +1,5 @@
 from .errors import ValidationError
-from .fields import (
-    CustomerField, UnitField, RentField, PaymentField, LiabilityField
-)
-
-UNIT_STATUS_OPTIONS      = ['Available', 'Rented', 'Maintenance']
-CUSTOMER_STATUS_OPTIONS  = ['Active', 'Suspended', 'Blacklisted']
-RENTAL_STATUS_OPTIONS    = ['Cancelled', 'Active', 'Returned with Liabilities', 'Completed']
-PAYMENT_TYPE_OPTIONS     = ['Base Fee', 'Liability Fee']
-LIABILITY_TYPE_OPTIONS   = ['Overdue', 'Damage', 'Equipment Loss', 'Other']
-LIABILITY_STATUS_OPTIONS = ['Active', 'Cleared']
+from .fields import *
 
 def _require_nonempty(value, field_info):
     if field_info.required and (value is None or str(value).strip() == ''):
