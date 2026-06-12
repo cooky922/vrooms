@@ -128,7 +128,7 @@ Popup {
                 width: 32
                 height: 32
                 radius: 16
-                color: closeHover.hovered ? "#E5E7EB" : "transparent"
+                color: closeMouseArea.containsMouse ? "#EEEEEE" : "transparent"
                 
                 Image { 
                     source: "../../../../assets/icons/close.svg"
@@ -136,14 +136,18 @@ Popup {
                     anchors.centerIn: parent
                     opacity: 0.7 
                 }
-                
-                HoverHandler { 
-                    id: closeHover
+
+                MouseArea { 
+                    id: closeMouseArea
+                    anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor 
-                }
-                
-                TapHandler { 
-                    onTapped: root.close() 
+                    hoverEnabled: true
+                    preventStealing: true
+                    
+                    onClicked: (mouse) => {
+                        mouse.accepted = true
+                        root.close()
+                    }
                 }
             }
         }
@@ -165,8 +169,10 @@ Popup {
                     delegate: Loader {
                         id: fieldLoader
                         Layout.fillWidth: true
-                        
-                        z: root.currentSchema.length - index 
+                        z: root.currentSchema.length - index
+                        asynchronous: true
+                        opacity: status === Loader.Ready ? 1.0 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 200 } }
 
                         source: {
                             switch(modelData.type) {
@@ -197,6 +203,7 @@ Popup {
                         }
 
                         Binding {
+                            when: fieldLoader.status === Loader.Ready
                             target: fieldLoader.item
                             property: "value"
                             value: root.formData[modelData.key] !== undefined ? root.formData[modelData.key] : ""

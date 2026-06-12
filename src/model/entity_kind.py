@@ -1,11 +1,11 @@
 from enum import Enum
 
 class EntityKind(Enum):
-    CUSTOMER  = 'Customer'
-    UNIT      = 'Unit'
-    RENT      = 'Rent'
-    PAYMENT   = 'Payment'
-    LIABILITY = 'Liability'
+    CUSTOMER  = 'customer'
+    UNIT      = 'unit'
+    RENT      = 'rent'
+    PAYMENT   = 'payment'
+    LIABILITY = 'liability'
 
     def get_model(self):
         from .fields import (

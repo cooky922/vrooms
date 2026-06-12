@@ -46,6 +46,8 @@ class QMLDataViewController(QObject):
         self._search_text        = ''
         self._search_filter_index = 0
 
+        self.refreshTable()
+
     # Properties
     @pyqtProperty(int, notify=paginationChanged)
     def totalItemCount(self): return self._total_item_count

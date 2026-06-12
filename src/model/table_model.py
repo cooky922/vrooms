@@ -50,11 +50,11 @@ class DataTableModel(QAbstractTableModel):
     @pyqtSlot(int, str, result=int)
     def getColumnWidth(self, column, entity_name):
         kind_map = {
-            'Customer': EntityKind.CUSTOMER, 
-            'Unit': EntityKind.UNIT, 
-            'Rent': EntityKind.RENT,
-            'Payment': EntityKind.PAYMENT, 
-            'Liability': EntityKind.LIABILITY
+            'customer': EntityKind.CUSTOMER, 
+            'unit': EntityKind.UNIT, 
+            'rent': EntityKind.RENT,
+            'payment': EntityKind.PAYMENT, 
+            'liability': EntityKind.LIABILITY
         }
         kind = kind_map.get(entity_name, EntityKind.UNIT)
         columns = REPOSITORY_MAP[kind].get_columns()

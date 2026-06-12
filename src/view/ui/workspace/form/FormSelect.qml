@@ -9,6 +9,7 @@ ColumnLayout {
     property bool isRequired: false
     property var options: []
     property var value: ""
+    property bool isViewOnly: false
     
     signal inputValueChanged(string key, var val)
 
@@ -23,20 +24,45 @@ ColumnLayout {
         color: "#333"
     }
 
-    Components.DropdownChip {
-        id: dropdown
+    Item {
         Layout.fillWidth: true
         Layout.preferredHeight: 30
-        menuWidth: dropdown.width 
-        isSmall: true
-        label: "Select " + root.label
-        fontName: appTheme.rethinkSansFontName
-        model: root.options
-        selectedValue: root.value !== undefined ? root.value : ""
-        
-        onSelectedValueChanged: {
-            if (root.value !== selectedValue) {
-                root.inputValueChanged(root.fieldKey, selectedValue)
+
+        Components.DropdownChip {
+            id: dropdown
+            visible: !root.isViewOnly
+            anchors.fill: parent
+            menuWidth: dropdown.width 
+            isSmall: true
+            label: "Select " + root.label
+            fontName: appTheme.rethinkSansFontName
+            model: root.options
+            selectedValue: root.value !== undefined ? root.value : ""
+            
+            onSelectedValueChanged: {
+                if (!root.isViewOnly && root.value !== selectedValue) {
+                    root.inputValueChanged(root.fieldKey, selectedValue)
+                }
+            }
+        }
+
+        Rectangle {
+            visible: root.isViewOnly
+            anchors.fill: parent
+            radius: 15
+            color: "#EEEEEE"
+            border.width: 0
+            
+            Text {
+                anchors.fill: parent
+                anchors.leftMargin: 12
+                anchors.rightMargin: 12
+                verticalAlignment: Text.AlignVCenter
+                
+                text: (root.value !== undefined && root.value !== "") ? root.value : "-"
+                font { pixelSize: 12; family: appTheme.rethinkSansFontName }
+                color: "#666666"
+                elide: Text.ElideRight
             }
         }
     }

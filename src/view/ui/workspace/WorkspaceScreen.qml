@@ -160,6 +160,10 @@ Item {
         }
 
         // > dialogs
+        ViewDialog {
+            id: viewDialog
+        }
+
         AddDialog {
             id: addDialog
             onAddClicked: function(data) {

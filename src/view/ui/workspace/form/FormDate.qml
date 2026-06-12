@@ -9,6 +9,7 @@ ColumnLayout {
     property bool isRequired: false
     property var value: ""
     property string placeholderText: "YYYY-MM-DD"
+    property bool isViewOnly: false
     
     signal inputValueChanged(string key, var val)
 
@@ -26,11 +27,13 @@ ColumnLayout {
         id: field
         Layout.fillWidth: true
         Layout.preferredHeight: 30
-        placeholderText: root.placeholderText
+        placeholderText: root.isViewOnly ? "-" : root.placeholderText
         leftPadding: 12
-        rightPadding: field.text === "" ? todayBtn.width + 12 : 32
+        rightPadding: (!root.isViewOnly && field.text === "") ? todayBtn.width + 12 : 32
         font { pixelSize: 12; family: appTheme.rethinkSansFontName }
-        color: "#333"
+        
+        readOnly: root.isViewOnly
+        color: root.isViewOnly ? "#666666" : "#333"
         placeholderTextColor: "#AAAAAA"
         
         text: root.value !== undefined ? root.value : ""
@@ -38,9 +41,9 @@ ColumnLayout {
 
         background: Rectangle {
             radius: 15
-            color: "transparent"
-            border.color: field.activeFocus ? appTheme.activeColor : "#888888"
-            border.width: field.activeFocus ? 2 : 0.75
+            color: root.isViewOnly ? "#EEEEEE" : "transparent"
+            border.color: root.isViewOnly ? "transparent" : (field.activeFocus ? appTheme.activeColor : "#888888")
+            border.width: field.activeFocus && !root.isViewOnly ? 2 : (root.isViewOnly ? 0 : 0.75)
         }
 
         HoverHandler { 
@@ -48,13 +51,13 @@ ColumnLayout {
         }
         
         transform: Translate { 
-            y: hover.hovered ? -2 : 0
+            y: (hover.hovered && !root.isViewOnly) ? -2 : 0
             Behavior on y { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } } 
         }
 
         Rectangle {
             id: todayBtn
-            visible: field.text === ""
+            visible: !root.isViewOnly && field.text === ""
             anchors.right: parent.right
             anchors.rightMargin: 6
             anchors.verticalCenter: parent.verticalCenter
@@ -88,7 +91,6 @@ ColumnLayout {
                 cursorShape: Qt.PointingHandCursor 
             }
             
-            // Fix: Multi-line formatting without semicolons
             TapHandler { 
                 onTapped: {
                     var d = Qt.formatDate(new Date(), "yyyy-MM-dd")
@@ -99,7 +101,7 @@ ColumnLayout {
         }
 
         Rectangle {
-            visible: field.text !== ""
+            visible: !root.isViewOnly && field.text !== ""
             width: 20
             height: 20
             radius: 10

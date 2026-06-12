@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Dialogs
+import QtQuick.Effects
 
 ColumnLayout {
     id: root
@@ -8,6 +9,7 @@ ColumnLayout {
     property string label: ""
     property bool isRequired: false
     property var value: ""
+    property bool isViewOnly: false
     
     signal inputValueChanged(string key, var val)
 
@@ -25,37 +27,130 @@ ColumnLayout {
         id: imageDialog
         title: "Select File"
         nameFilters: ["Files (*.*)"]
-        onAccepted: root.inputValueChanged(root.fieldKey, selectedFile)
+        onAccepted: {
+            if (!root.isViewOnly) {
+                root.inputValueChanged(root.fieldKey, selectedFile)
+            }
+        }
     }
 
     Rectangle {
         id: fileUpload
         Layout.fillWidth: true
-        height: 90
+        Layout.preferredHeight: {
+            if (root.isViewOnly && root.value && root.value !== "" && previewImage.status === Image.Ready) {
+                let sW = previewImage.implicitWidth
+                let sH = previewImage.implicitHeight
+                if (sW > 0 && fileUpload.width > 0) {
+                    return Math.max(90, (fileUpload.width / sW) * sH)
+                }
+            }
+            return 90
+        }
+        
         radius: 12
         
         color: {
+            if (root.isViewOnly) return "#EEEEEE"
             if (root.value && root.value !== "") return "#C2E7FF"
-            if (dropArea.containsDrag) return "#EBF3FB"
+            if (dropArea.containsDrag && !root.isViewOnly) return "#EBF3FB"
             return "transparent"
         }
         
-        border.color: dropArea.containsDrag ? appTheme.activeColor : "#888888"
-        border.width: (root.value && root.value !== "") ? 0 : 0.75
+        border.color: root.isViewOnly ? "transparent" : (dropArea.containsDrag ? appTheme.activeColor : "#888888")
+        border.width: (root.isViewOnly || (root.value && root.value !== "")) ? 0 : 0.75
         
         HoverHandler { 
             id: fileHover
-            cursorShape: Qt.PointingHandCursor 
+            cursorShape: root.isViewOnly ? Qt.ArrowCursor : Qt.PointingHandCursor 
         }
         
         transform: Translate { 
-            y: fileHover.hovered ? -2 : 0
+            y: (fileHover.hovered && !root.isViewOnly) ? -2 : 0
             Behavior on y { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } } 
+        }
+
+        Rectangle {
+            id: maskRect
+            anchors.fill: parent
+            radius: 12
+            visible: false
+            layer.enabled: true
+        }
+
+        Item {
+            anchors.fill: parent
+            visible: root.isViewOnly && root.value && root.value !== "" && previewImage.status === Image.Ready
+
+            layer.enabled: true
+            layer.effect: MultiEffect {
+                maskEnabled: true
+                maskSource: maskRect
+            }
+
+            Image {
+                id: previewImage
+                anchors.fill: parent
+                fillMode: Image.PreserveAspectCrop 
+                
+                source: {
+                    if (!root.isViewOnly || !root.value || root.value === "") return ""
+                    
+                    let path = root.value.toString()
+                    
+                    if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("file://")) {
+                        return path
+                    }
+                    
+                    return "file:///" + path.replace(/\\/g, "/")
+                }
+            }
+            
+            Rectangle {
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: 24
+                color: "#B3000000"
+                
+                Text {
+                    anchors.fill: parent
+                    anchors.leftMargin: 12
+                    anchors.rightMargin: 12
+                    verticalAlignment: Text.AlignVCenter
+                    text: root.value ? root.value.toString() : ""
+                    font { pixelSize: 11; family: appTheme.rethinkSansFontName }
+                    color: "#FFFFFF"
+                    elide: Text.ElideMiddle
+                }
+            }
         }
 
         Column {
             anchors.centerIn: parent
             spacing: 4
+            visible: root.isViewOnly && (!root.value || root.value === "" || previewImage.status === Image.Error || previewImage.status === Image.Null)
+            
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: (!root.value || root.value === "") ? "No image attached" : "Image failed to load"
+                font { pixelSize: 13; bold: true; family: appTheme.rethinkSansFontName }
+                color: "#666"
+            }
+        }
+
+        Text {
+            anchors.centerIn: parent
+            visible: root.isViewOnly && root.value && root.value !== "" && previewImage.status === Image.Loading
+            text: "Loading image..."
+            font { pixelSize: 12; family: appTheme.rethinkSansFontName }
+            color: "#888"
+        }
+
+        Column {
+            anchors.centerIn: parent
+            spacing: 4
+            visible: !root.isViewOnly
             
             Image { 
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -83,7 +178,7 @@ ColumnLayout {
         }
 
         Rectangle {
-            visible: root.value && root.value !== ""
+            visible: !root.isViewOnly && root.value && root.value !== ""
             anchors.top: parent.top
             anchors.right: parent.right
             anchors.margins: 6
@@ -91,13 +186,13 @@ ColumnLayout {
             height: 20
             radius: 10
             color: clearFileMouse.containsMouse ? "#1A001D35" : "transparent"
-            z: 10
+            z: 10 
             
             Image { 
                 anchors.centerIn: parent
                 source: "../../../../../assets/icons/close.svg"
                 sourceSize: Qt.size(12, 12)
-                opacity: 1.0
+                opacity: 1.0 
             }
             
             MouseArea { 
@@ -108,7 +203,7 @@ ColumnLayout {
                 
                 onClicked: (mouse) => { 
                     root.inputValueChanged(root.fieldKey, "") 
-                    mouse.accepted = true
+                    mouse.accepted = true 
                 } 
             }
         }
@@ -116,14 +211,16 @@ ColumnLayout {
         DropArea { 
             id: dropArea
             anchors.fill: parent
+            enabled: !root.isViewOnly
             onDropped: (drop) => { 
-                if (drop.hasUrls) {
+                if (drop.hasUrls && !root.isViewOnly) {
                     root.inputValueChanged(root.fieldKey, drop.urls[0]) 
                 }
             } 
         }
         
         TapHandler { 
+            enabled: !root.isViewOnly
             onTapped: imageDialog.open() 
         }
     }

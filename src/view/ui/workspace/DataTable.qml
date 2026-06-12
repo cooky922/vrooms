@@ -164,6 +164,9 @@ Rectangle {
                     TapHandler {
                         onTapped: {
                             // TODO: Implement row selection and interaction logic here
+                            viewDialog.entityName = appDataViewController.selectedEntityName
+                            viewDialog.viewData = appDataTableModel.getRowData(row)
+                            viewDialog.open()
                         }
                     }
 
