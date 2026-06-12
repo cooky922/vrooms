@@ -20,7 +20,7 @@ Item {
 
             Components.SearchBar {
                 Layout.preferredWidth: 350
-                placeholderText: "Search " + root.activeTabName + "..."
+                placeholderText: "Search " + root.activeTabName.toLowerCase() + "..."
                 text: appDataViewController.searchText
             }
             
@@ -31,7 +31,7 @@ Item {
                 textSize: 13
                 iconName: "account"
                 enableAnimate: true
-                onClicked: userMenu.open()
+                onClicked: userMenu.toggle()
 
                 Components.ContextMenu {
                     id: userMenu

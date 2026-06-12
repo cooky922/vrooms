@@ -260,6 +260,7 @@ Rectangle {
 
                         Components.ContextMenuItem {
                             text: "Ascending"
+                            shortcutText: "A..Z"
                             checkable: true
                             checked: appDataViewController.sortAscending === true 
                             
@@ -270,6 +271,7 @@ Rectangle {
 
                         Components.ContextMenuItem {
                             text: "Descending"
+                            shortcutText: "Z..A"
                             checkable: true
                             checked: appDataViewController.sortAscending === false 
                             

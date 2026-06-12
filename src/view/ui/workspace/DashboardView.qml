@@ -78,7 +78,7 @@ Item {
                 textSize: 13
                 iconName: "account"
                 enableAnimate: true
-                onClicked: userMenu.open()
+                onClicked: userMenu.toggle()
 
                 Components.ContextMenu {
                     id: userMenu
