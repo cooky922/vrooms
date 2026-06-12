@@ -33,7 +33,7 @@ class QMLDataViewController(QObject):
         self.entity_kind = EntityKind.UNIT
 
         self._page_index        = 0
-        self._page_size         = 100
+        self._page_size         = 10
         self._visible_item_count= 0
         self._total_item_count  = 0
 

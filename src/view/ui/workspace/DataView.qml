@@ -113,6 +113,11 @@ Item {
         }
 
         // > data bottom bar
+        PaginationArea {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 24
+        }
+        /*
         Item {
             Layout.fillWidth: true
             Layout.preferredHeight: 24
@@ -123,5 +128,6 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
             }
         }
+        */
     }
 }
