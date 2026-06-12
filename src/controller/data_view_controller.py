@@ -289,7 +289,7 @@ class QMLDataViewController(QObject):
     def addRecord(self, new_data):
         try:
             REPOSITORY_MAP[self.entity_kind].add_record(self.normalizeRecord(new_data))
-            return {'success': True, 'message': 'Record added successfully.'}
+            return {'success': True, 'message': 'One item added successfully.'}
         except Exception as e:
             return {'success': False, 'message': str(e)}
         finally:
@@ -304,7 +304,7 @@ class QMLDataViewController(QObject):
             parent_id     = str(old_data[repo.PARENT_FK]) if repo.PARENT_FK else None
             
             repo.update_record(self.normalizeRecord(new_data), key=old_key_value, parent_id=parent_id)
-            return {'success': True, 'message': 'Record updated successfully.'}
+            return {'success': True, 'message': 'One item updated successfully.'}
         except Exception as e:
             return {'success': False, 'message': str(e)}
         finally:
@@ -314,7 +314,7 @@ class QMLDataViewController(QObject):
     def updateRecords(self, keys, updates):
         try:
             REPOSITORY_MAP[self.entity_kind].update_records(keys, updates)
-            return {'success': True, 'message': 'Records updated successfully.'}
+            return {'success': True, 'message': 'Multiple items updated successfully.'}
         except Exception as e:
             return {'success': False, 'message': str(e)}
         finally:
@@ -329,7 +329,7 @@ class QMLDataViewController(QObject):
             parent_id = str(old_data[repo.PARENT_FK]) if repo.PARENT_FK else None
             
             repo.delete_record(key=key_value, parent_id=parent_id)
-            return {'success': True, 'message': 'Record deleted successfully.'}
+            return {'success': True, 'message': 'One item deleted successfully.'}
         except Exception as e:
             return {'success': False, 'message': str(e)}
         finally:
@@ -339,7 +339,7 @@ class QMLDataViewController(QObject):
     def deleteRecords(self, keys):
         try:
             REPOSITORY_MAP[self.entity_kind].delete_records(keys)
-            return {'success': True, 'message': 'Records deleted successfully.'}
+            return {'success': True, 'message': 'Multiple items deleted successfully.'}
         except Exception as e:
             return {'success': False, 'message': str(e)}
         finally:

@@ -159,6 +159,11 @@ Item {
             }
         }
 
+        // > toast notification
+        Components.Toast {
+            id: appToast
+        }
+
         // > dialogs
         ViewDialog {
             id: viewDialog
@@ -167,24 +172,27 @@ Item {
         AddDialog {
             id: addDialog
             onAddClicked: function(data) {
-                appUtils.printLog(JSON.stringify(data));
-                appDataViewController.addRecord(data);
+                let result = appDataViewController.addRecord(data)
+                let didFail = !result.success
+                appToast.showToast(result.message, didFail)
             }
         }
 
         EditDialog {
             id: editDialog
             onSaveClicked: function(oldData, newData) {
-                appUtils.printLog(JSON.stringify(newData));
-                appDataViewController.updateRecord(oldData, newData);
+                let result = appDataViewController.updateRecord(oldData, newData)
+                let didFail = !result.success
+                appToast.showToast(result.message, didFail)
             }
         }
 
         DeleteDialog {
             id: deleteDialog
             onDeleteClicked: function(oldData) {
-                appUtils.printLog("Delete confirmed");
-                appDataViewController.deleteRecord(oldData);
+                let result = appDataViewController.deleteRecord(oldData)
+                let didFail = !result.success
+                appToast.showToast(result.message, didFail)
             }
         }
     }
