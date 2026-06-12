@@ -241,6 +241,8 @@ Item {
             model: root.model
             Components.ContextMenuItem {
                 text: modelData
+                checkable: root.selectedValue !== ""
+                checked: root.selectedValue === modelData
                 onTriggered: {
                     root.selectedValue = modelData
                     chipMenu.close()

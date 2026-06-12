@@ -11,8 +11,12 @@ Popup {
     rightPadding: 0
     margins: 0 
     
+    // Automatically cap height at 80% of screen to enable scrolling!
+    height: Math.min(implicitHeight, Overlay.overlay ? Overlay.overlay.height * 0.8 : 500)
+    
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
+    // Routes injected children into the Layout inside the ScrollView
     default property alias menuItems: contentLayout.data
 
     property bool smartPositioning: false 
@@ -73,22 +77,31 @@ Popup {
         }
     }
 
-    contentItem: ColumnLayout {
-        id: contentLayout
-        spacing: 2 
-
+    contentItem: ScrollView {
+        id: scrollView
+        clip: true
+        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+        ScrollBar.vertical.policy: ScrollBar.AsNeeded
+        
         transform: Translate { y: root.slideOffset }
 
-        function injectMenuReference() {
-            for (let i = 0; i < children.length; i++) {
-                if (children[i].hostMenu !== undefined) {
-                    children[i].hostMenu = root
+        ColumnLayout {
+            id: contentLayout
+            width: scrollView.availableWidth
+            spacing: 2
+            Layout.fillWidth: true
+
+            function injectMenuReference() {
+                for (let i = 0; i < children.length; i++) {
+                    if (children[i].hostMenu !== undefined) {
+                        children[i].hostMenu = root
+                    }
                 }
             }
-        }
 
-        Component.onCompleted: injectMenuReference()
-        onChildrenChanged: injectMenuReference()
+            Component.onCompleted: injectMenuReference()
+            onChildrenChanged: injectMenuReference()
+        }
     }
 
     enter: Transition {
