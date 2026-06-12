@@ -12,6 +12,7 @@ Item {
     
     property bool isSmall: false
     property color parentBgColor: "#FFFFFF"
+    property string fontName: appTheme.inclusiveSansFontName
 
     property real menuWidth: 0
 
@@ -92,7 +93,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             
             text: root.hasSelection ? root.selectedValue : root.label
-            font.family: appTheme.inclusiveSansFontName
+            font.family: root.fontName
             font.pixelSize: root.isSmall ? 12 : 13
             font.weight: Font.Medium
             color: root.hasSelection ? "#001D35" : "#444746"

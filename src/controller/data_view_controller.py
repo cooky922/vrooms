@@ -1,5 +1,5 @@
 import math
-from PyQt6.QtCore import QObject, pyqtSlot, pyqtProperty, pyqtSignal
+from PyQt6.QtCore import QObject, QUrl, pyqtSlot, pyqtProperty, pyqtSignal
 from src.database import Paged, Sorted, Search
 from src.model import (
     EntityKind,
@@ -123,11 +123,11 @@ class QMLDataViewController(QObject):
     def reselectEntity(self, entity_name: str):
         if self.selectedEntityName != entity_name:
             kind_map = {
-                'Customers':  EntityKind.CUSTOMER,
-                'Units':      EntityKind.UNIT,
-                'Rents':      EntityKind.RENT,
-                'Payments':   EntityKind.PAYMENT,
-                'Liabilities': EntityKind.LIABILITY,
+                'customer':  EntityKind.CUSTOMER,
+                'unit':      EntityKind.UNIT,
+                'rent':      EntityKind.RENT,
+                'payment':   EntityKind.PAYMENT,
+                'liability': EntityKind.LIABILITY,
             }
             self.entity_kind         = kind_map.get(entity_name, EntityKind.UNIT)
             self._page_index         = 0
@@ -259,7 +259,7 @@ class QMLDataViewController(QObject):
         return {'isValid': is_valid, 'errors': errors}
 
     @pyqtSlot(str, str, result='QVariantMap')
-    def getRecordByKey(self, key, parent_id=""):
+    def getRecordByKey(self, key, parent_id=''):
         return REPOSITORY_MAP[self.entity_kind].get_record(key, parent_id=parent_id if parent_id else None) or {}
 
     @pyqtSlot('QVariantMap', result='QVariantMap')
@@ -331,6 +331,8 @@ class QMLDataViewController(QObject):
                 new_data[k] = float(v) if (v is not None and v != '') else None
             elif v is None or v == '':
                 new_data[k] = None
+            elif k in ('unitPicture', 'driverLicenseIDPicture') and isinstance(v, QUrl):
+                new_data[k] = v.toLocalFile() if v.isLocalFile() else str(v)
             else:
                 new_data[k] = str(v)
         for col in repo.get_columns():

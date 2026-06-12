@@ -35,3 +35,18 @@ class QMLUtils(QObject):
     @pyqtSlot(str, result = str)
     def prettifyColumnName(self, name):
         return name.replace('_', ' ').title()
+
+    @pyqtSlot(str, result = str)
+    def renameEntityName(self, name):
+        entityNames = {
+            'Units': 'unit',
+            'Customers': 'customer',
+            'Rents': 'rent',
+            'Payments': 'payment',
+            'Liabilities': 'liability'
+        }
+        return entityNames.get(name, '')
+
+    @pyqtSlot(str, result = str)
+    def capitalize(self, s):
+        return s.capitalize()

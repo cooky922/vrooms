@@ -91,12 +91,13 @@ Item {
 
                 onEditRowRequested: function(rowIndex) {
                     let rowData = appDataTableModel.getRowData(rowIndex)
-                    editUnitDialog.unitData = rowData
-                    editUnitDialog.open()
+                    editDialog.entityName = appUtils.renameEntityName(workspaceScreen.currentView)
+                    editDialog.oldData = rowData
+                    editDialog.open()
                 }
 
                 onDeleteRowRequested: function(rowIndex) {
-                    deleteDialog.entityName = workspaceScreen.currentView.slice(0, -1)
+                    deleteDialog.entityName = appUtils.renameEntityName(workspaceScreen.currentView)
                     deleteDialog.oldData = appDataTableModel.getRowData(rowIndex)
                     deleteDialog.open()
                 }

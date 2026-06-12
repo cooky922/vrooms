@@ -329,9 +329,9 @@ class LiabilityField(Enum):
 
 def get_entity_schema_map():
     return {
-        'Unit': [field.value.to_dict() for field in UnitField],
-        'Customer': [field.value.to_dict() for field in CustomerField],
-        'Rent': [field.value.to_dict() for field in RentField],
-        'Payment': [field.value.to_dict() for field in PaymentField],
-        'Liability': [field.value.to_dict() for field in LiabilityField]
+        'unit': [field.value.to_dict() for field in UnitField],
+        'customer': [field.value.to_dict() for field in CustomerField],
+        'rent': [field.value.to_dict() for field in RentField],
+        'payment': [field.value.to_dict() for field in PaymentField],
+        'liability': [field.value.to_dict() for field in LiabilityField]
     }

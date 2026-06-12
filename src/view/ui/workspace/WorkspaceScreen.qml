@@ -5,7 +5,6 @@ import "../../components" as Components
 
 Item {
     id: workspaceScreen
-
     property string currentView: "Dashboard"
 
     Rectangle {
@@ -66,8 +65,10 @@ Item {
                         Behavior on scale { NumberAnimation { duration: 300; easing.type: Easing.OutBack; easing.overshoot: 1.5 } }
 
                         onClicked: {
-                            if (workspaceScreen.currentView === "Units")
-                                addUnitDialog.open()
+                            if (workspaceScreen.currentView !== "Dashboard") {
+                                addDialog.entityName = appUtils.renameEntityName(workspaceScreen.currentView)
+                                addDialog.open()
+                            }
                         }
                     }
 
@@ -148,8 +149,10 @@ Item {
                         onLogoutClicked: stack.pop()
 
                         onActiveTabNameChanged: {
-                            if (activeTabName !== "Dashboard")
-                                appDataViewController.reselectEntity(activeTabName)
+                            if (activeTabName !== "Dashboard") {
+                                let name = appUtils.renameEntityName(activeTabName)
+                                appDataViewController.reselectEntity(name)
+                            }
                         }
                     }
                 }
@@ -157,16 +160,16 @@ Item {
         }
 
         // > dialogs
-        AddUnitDialog {
-            id: addUnitDialog
+        AddDialog {
+            id: addDialog
             onAddClicked: function(data) {
                 appUtils.printLog(JSON.stringify(data));
                 appDataViewController.addRecord(data);
             }
         }
 
-        EditUnitDialog {
-            id: editUnitDialog
+        EditDialog {
+            id: editDialog
             onSaveClicked: function(oldData, newData) {
                 appUtils.printLog(JSON.stringify(newData));
                 appDataViewController.updateRecord(oldData, newData);
