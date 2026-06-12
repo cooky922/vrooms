@@ -117,17 +117,5 @@ Item {
             Layout.fillWidth: true
             Layout.preferredHeight: 24
         }
-        /*
-        Item {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 24
-            
-            Components.InfoText {
-                text: "Viewing " + root.activeTabName
-                textSize: 11
-                anchors.verticalCenter: parent.verticalCenter
-            }
-        }
-        */
     }
 }

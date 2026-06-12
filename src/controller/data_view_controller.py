@@ -171,6 +171,15 @@ class QMLDataViewController(QObject):
         self.paginationChanged.emit()
         self.refreshTable()
 
+    @pyqtSlot(int, bool)
+    def setSortOptions(self, field_index : int, ascending: bool):
+        if self._sort_field_index != field_index or self._sort_ascending != ascending:
+            self._sort_field_index = field_index
+            self._sort_ascending = ascending
+            self.sortStateChanged.emit()
+            self.paginationChanged.emit()
+            self.refreshTable()
+
     @pyqtSlot()
     def nextPage(self):
         if self._page_index < (self.totalPages - 1):

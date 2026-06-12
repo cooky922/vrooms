@@ -11,12 +11,11 @@ Popup {
     rightPadding: 0
     margins: 0 
     
-    // Automatically cap height at 80% of screen to enable scrolling!
-    height: Math.min(implicitHeight, Overlay.overlay ? Overlay.overlay.height * 0.8 : 500)
+    property real maximumHeight: Overlay.overlay ? Overlay.overlay.height * 0.8 : 500
+    height: Math.min(contentLayout.implicitHeight + topPadding + bottomPadding, root.maximumHeight)
     
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
-    // Routes injected children into the Layout inside the ScrollView
     default property alias menuItems: contentLayout.data
 
     property bool smartPositioning: false 
@@ -35,7 +34,7 @@ Popup {
         if (smartPositioning && parent) {
             let pos = parent.mapToItem(null, 0, parent.height)
             let winHeight = parent.Window.height
-            _isUpward = (pos.y + root.implicitHeight > winHeight - 16)
+            _isUpward = (pos.y + root.height > winHeight - 16)
         }
     }
 

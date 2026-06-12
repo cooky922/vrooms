@@ -163,7 +163,6 @@ Rectangle {
 
                     TapHandler {
                         onTapped: {
-                            // TODO: Implement row selection and interaction logic here
                             viewDialog.entityName = appDataViewController.selectedEntityName
                             viewDialog.viewData = appDataTableModel.getRowData(row)
                             viewDialog.open()
@@ -199,6 +198,7 @@ Rectangle {
 
             // >> sort button area
             Rectangle {
+                id: sortButtonArea
                 Layout.fillWidth: true
                 Layout.preferredHeight: header.height
                 color: "white"
@@ -220,7 +220,63 @@ Rectangle {
                     HoverHandler { id: rightSortHover; cursorShape: Qt.PointingHandCursor }
                     TapHandler {
                         id: rightSortTap
-                        // TODO: add functionality to open a sort options menu
+                        onTapped: sortMenu.toggle()
+                    }
+
+                    Components.ContextMenu {
+                        id: sortMenu
+                        y: sortButtonArea.height + sortMenu.slideOffset
+                        x: sortButtonArea.width - sortMenu.width
+                        maximumHeight: 350
+
+                        property string entityName: appDataViewController.selectedEntityName
+                        property var currentSchema: appEntitySchemaMap[sortMenu.entityName]
+
+                        Components.ContextMenuHeading {
+                            text: "Sort by"
+                        }
+
+                        Repeater {
+                            model: sortMenu.currentSchema
+                            
+                            Components.ContextMenuItem {
+                                text: modelData.label 
+                                checkable: true
+                                checked: appDataViewController.sortFieldIndex === index 
+                                
+                                onTriggered: {
+                                    appDataViewController.setSortOptions(index, appDataViewController.sortAscending)
+                                }
+                            }
+                        }
+
+                        Components.ContextMenuSeparator {
+                            Layout.fillWidth: true
+                        }
+
+                        Components.ContextMenuHeading { 
+                            text: "Sort order" 
+                        }
+
+                        Components.ContextMenuItem {
+                            text: "Ascending"
+                            checkable: true
+                            checked: appDataViewController.sortAscending === true 
+                            
+                            onTriggered: {
+                                appDataViewController.setSortOptions(appDataViewController.sortFieldIndex, true)
+                            }
+                        }
+
+                        Components.ContextMenuItem {
+                            text: "Descending"
+                            checkable: true
+                            checked: appDataViewController.sortAscending === false 
+                            
+                            onTriggered: {
+                                appDataViewController.setSortOptions(appDataViewController.sortFieldIndex, false)
+                            }
+                        }
                     }
                 }
             }
