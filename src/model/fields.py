@@ -326,3 +326,12 @@ class LiabilityField(Enum):
     @staticmethod
     def get_fields() -> dict[str, FieldInfo]:
         return {field.value.internal_name: field.value for field in LiabilityField}
+
+def get_entity_schema_map():
+    return {
+        'Unit': [field.value.to_dict() for field in UnitField],
+        'Customer': [field.value.to_dict() for field in CustomerField],
+        'Rent': [field.value.to_dict() for field in RentField],
+        'Payment': [field.value.to_dict() for field in PaymentField],
+        'Liability': [field.value.to_dict() for field in LiabilityField]
+    }

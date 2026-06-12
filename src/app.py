@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import QApplication
 from src.controller import QMLDataViewController
 from src.database import SQLDatabase
 from src.model import (
+    get_entity_schema_map,
     DataTableModel,
     UnitRepository, 
     CustomerRepository, 
@@ -58,6 +59,7 @@ class App(QApplication):
         self.appUtils = QMLUtils(self)
         self.appDataTableModel = DataTableModel(self)
         self.appDataViewController = QMLDataViewController(self.appDataTableModel, self)
+        self.appEntitySchemaMap = get_entity_schema_map()
 
         # Prepare QML context properties and load file
         context = self.engine.rootContext()
@@ -65,6 +67,7 @@ class App(QApplication):
         context.setContextProperty('appUtils', self.appUtils)
         context.setContextProperty('appDataTableModel', self.appDataTableModel)
         context.setContextProperty('appDataViewController', self.appDataViewController)
+        context.setContextProperty('appEntitySchemaMap', self.appEntitySchemaMap)
         self.engine.load(QUrl.fromLocalFile(App.app_qml_file_path))
 
         # Return early if invalid (ex: QML errors)
