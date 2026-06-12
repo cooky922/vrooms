@@ -84,7 +84,7 @@ Popup {
         validateForm()
     }
 
-    onOpened: {
+    onAboutToShow: {
         formData = Object.assign({}, oldData)
         validateForm()
     }
