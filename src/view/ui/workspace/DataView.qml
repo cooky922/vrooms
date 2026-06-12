@@ -50,16 +50,32 @@ Item {
         RowLayout {
             Layout.fillWidth: true
 
-            Components.DropdownChip {
-                label: "Type"
-                model: ["Documents", "Spreadsheets", "PDFs"]
-                isSmall: true
-            }
+            Repeater {
+                model: {
+                    if (root.activeTabName === "") return []
+                    let entityName = appDataViewController.selectedEntityName
+                    let currentSchema = appEntitySchemaMap[entityName] || []
+                    return currentSchema.filter(
+                        f => f.type === "select" && f.options && f.options.length > 0
+                    )
+                }
+                
+                delegate: Components.DropdownChip {
+                    label: modelData.label
+                    model: modelData.options
+                    isSmall: true
+                    
+                    onSelectedValueChanged: {
+                        appDataViewController.setFilterOption(modelData.key, selectedValue)
+                    }
 
-            Components.DropdownChip {
-                label: "Status"
-                model: ["All", "Active", "Inactive"]
-                isSmall: true
+                    Connections {
+                        target: root
+                        function onActiveTabNameChanged() {
+                            selectedValue = ""
+                        }
+                    }
+                }
             }
 
             Item { Layout.fillWidth: true }

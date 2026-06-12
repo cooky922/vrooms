@@ -2,6 +2,14 @@ from dataclasses import dataclass
 from typing import Optional
 
 @dataclass
+class Filter:
+    options: dict
+
+    @staticmethod
+    def By(options: dict) -> 'Filter':
+        return Filter(options)
+
+@dataclass
 class Sorted:
     column: str
     ascending: bool = True

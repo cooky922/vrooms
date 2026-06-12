@@ -1,6 +1,6 @@
 import math
 from PyQt6.QtCore import QObject, QUrl, pyqtSlot, pyqtProperty, pyqtSignal
-from src.database import Paged, Sorted, Search
+from src.database import Filter, Paged, Sorted, Search
 from src.model import (
     EntityKind,
     ValidationError,
@@ -32,18 +32,18 @@ class QMLDataViewController(QObject):
         self.table_model = table_model
         self.entity_kind = EntityKind.UNIT
 
-        self._page_index        = 0
-        self._page_size         = 10
-        self._visible_item_count= 0
-        self._total_item_count  = 0
+        self._page_index = 0
+        self._page_size = 10
+        self._visible_item_count = 0
+        self._total_item_count = 0
 
-        self._filter_options    = None
+        self._filter_options = {}
         self.resetFilterOptions()
 
-        self._sort_field_index  = 0
-        self._sort_ascending    = True
+        self._sort_field_index = 0
+        self._sort_ascending = True
 
-        self._search_text        = ''
+        self._search_text = ''
         self._search_filter_index = 0
 
         self.refreshTable()
@@ -74,7 +74,7 @@ class QMLDataViewController(QObject):
             return 1
         return max(1, math.ceil(self._total_item_count / self._page_size))
 
-    @pyqtProperty(list, notify=selectedEntityChanged)
+    @pyqtProperty('QVariantMap', notify=selectedEntityChanged)
     def filterOptions(self): return self._filter_options
 
     @pyqtProperty(int, notify=sortStateChanged)
@@ -159,6 +159,19 @@ class QMLDataViewController(QObject):
                 self.searchChanged.emit()
                 self.refreshTable()
 
+    def resetFilterOptions(self):
+        self._filter_options = {}
+
+    @pyqtSlot(str, str)
+    def setFilterOption(self, field_key : str, value : str):
+        if value and value != '':
+            self._filter_options[field_key] = value
+        elif field_key in self._filter_options:
+            del self._filter_options[field_key]
+        self._page_index = 0
+        self.paginationChanged.emit()
+        self.refreshTable()
+
     @pyqtSlot(int)
     def toggleSort(self, field_index: int):
         if self._sort_field_index == field_index:
@@ -227,7 +240,6 @@ class QMLDataViewController(QObject):
         self._sort_ascending      = True
         self._search_text         = ''
         self._search_filter_index = 0
-        self._filter_options      = None
         self.resetFilterOptions()
         self.sortStateChanged.emit()
         self.selectedEntityChanged.emit()
@@ -351,14 +363,6 @@ class QMLDataViewController(QObject):
                 new_data[col] = None
         return new_data
 
-    def resetFilterOptions(self):
-        repo   = REPOSITORY_MAP[self.entity_kind]
-        fields = self.entity_kind.get_model()
-        self._filter_options = ['All Fields'] + [
-            fields.from_internal_name(col).value.display_name
-            for col in repo.get_columns()
-        ]
-
     def refreshTable(self):
         columns = REPOSITORY_MAP[self.entity_kind].get_columns()
 
@@ -373,13 +377,18 @@ class QMLDataViewController(QObject):
 
         paged_request  = Paged.Specific(index=self._page_index + 1, size=self._page_size)
         sorted_request = Sorted.By(column=columns[self._sort_field_index], ascending=self._sort_ascending)
+        filter_request = Filter.By(options=self._filter_options)
 
-        self._total_item_count = REPOSITORY_MAP[self.entity_kind].get_count(search=search_request)
+        self._total_item_count = REPOSITORY_MAP[self.entity_kind].get_count(
+            search=search_request, 
+            filter_opt=filter_request
+        )
 
         entries = REPOSITORY_MAP[self.entity_kind].get_records(
             search=search_request,
             sorted=sorted_request,
             paged=paged_request,
+            filter_opt=filter_request
         )
 
         self.table_model.resetModel(self.entity_kind, entries)

@@ -1,16 +1,16 @@
-import csv
-from pathlib import Path
-from typing import Optional, Union, Iterator, List
-
-from src.database import SQLDatabase, Sorted, Paged, Search
+from typing import Optional
+from src.database import SQLDatabase, Filter, Sorted, Paged, Search
 from .entity_kind import EntityKind
 from .errors import DatabaseError
 from .fields import (
     CustomerField, UnitField, RentField, PaymentField, LiabilityField
 )
 from .validators import (
-    validate_customer_field, validate_unit_field, validate_rent_field,
-    validate_payment_field, validate_liability_field
+    validate_customer_field, 
+    validate_unit_field, 
+    validate_rent_field,
+    validate_payment_field, 
+    validate_liability_field
 )
 
 def _build_where(search: Optional[Search], columns: list[str]) -> tuple[str, list]:
@@ -69,7 +69,7 @@ class BaseRepository:
         return [r[cls.PK] for r in rows]
 
     @classmethod
-    def _build_base_clause(cls, parent_id: Optional[str], search: Optional[Search]) -> tuple[str, list]:
+    def _build_base_clause(cls, parent_id: Optional[str], search: Optional[Search], filter_opt: Optional[Filter] = None) -> tuple[str, list]:
         parts = []
         params = []
         
@@ -81,18 +81,24 @@ class BaseRepository:
         if wp:
             parts.append(where.replace('WHERE ', ''))
             params += wp
+
+        if filter_opt and filter_opt.options:
+            for k, v in filter_opt.options.items():
+                if k in cls.COLUMNS:
+                    parts.append(f'{k} = ?')
+                    params.append(v)
             
         clause = ('WHERE ' + ' AND '.join(parts)) if parts else ''
         return clause, params
 
     @classmethod
-    def get_count(cls, search: Optional[Search] = None, parent_id: Optional[str] = None) -> int:
-        clause, params = cls._build_base_clause(parent_id, search)
+    def get_count(cls, search: Optional[Search] = None, filter_opt: Optional[Filter] = None, parent_id: Optional[str] = None) -> int:
+        clause, params = cls._build_base_clause(parent_id, search, filter_opt)
         return SQLDatabase.fetch_scalar(f'SELECT COUNT(*) FROM {cls.TABLE} {clause}', tuple(params)) or 0
 
     @classmethod
-    def get_records(cls, search=None, sorted=None, paged=None, parent_id: Optional[str] = None) -> list[dict]:
-        clause, params = cls._build_base_clause(parent_id, search)
+    def get_records(cls, search = None, sorted = None, paged = None, filter_opt = None, parent_id: Optional[str] = None) -> list[dict]:
+        clause, params = cls._build_base_clause(parent_id, search, filter_opt)
         order = _build_order(sorted)
         limit, lp = _build_limit_offset(paged)
         return SQLDatabase.fetch_all(f'SELECT * FROM {cls.TABLE} {clause} {order} {limit}', tuple(params + lp))
