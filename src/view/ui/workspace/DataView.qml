@@ -7,6 +7,7 @@ Item {
     id: root
 
     property string activeTabName: ""
+    property bool isGridView: false
     signal logoutClicked()
 
     ColumnLayout {
@@ -84,10 +85,15 @@ Item {
             Components.ToggleButtonGroup {
                 Components.ToggleButton { 
                     iconName: "list-view"
-                    checked: true 
+                    checked: !root.isGridView
+                    checkable: false
+                    onPressed: root.isGridView = false
                 }
                 Components.ToggleButton { 
-                    iconName: "grid-view" 
+                    iconName: "grid-view"
+                    checked: root.isGridView
+                    checkable: false
+                    onPressed: root.isGridView = true
                 }
             }
         }
@@ -104,11 +110,32 @@ Item {
             }
             clip: true
 
+            // >> list view
             DataTable {
                 id: dataTable
                 anchors.fill: parent
                 anchors.margins: 5
-                visible: appDataViewController.totalItemCount > 0
+                visible: !root.isGridView && appDataViewController.totalItemCount > 0
+
+                onEditRowRequested: function(rowIndex) {
+                    let rowData = appDataTableModel.getRowData(rowIndex)
+                    editDialog.entityName = appDataViewController.selectedEntityName
+                    editDialog.oldData = rowData
+                    editDialog.open()
+                }
+
+                onDeleteRowRequested: function(rowIndex) {
+                    deleteDialog.entityName = appDataViewController.selectedEntityName
+                    deleteDialog.oldData = appDataTableModel.getRowData(rowIndex)
+                    deleteDialog.open()
+                }
+            }
+
+            // >> grid view (all entities)
+            DataGridView {
+                id: entityGridView
+                anchors.fill: parent
+                visible: root.isGridView && appDataViewController.totalItemCount > 0
 
                 onEditRowRequested: function(rowIndex) {
                     let rowData = appDataTableModel.getRowData(rowIndex)
