@@ -10,7 +10,8 @@ ColumnLayout {
     property var value: ""
     property string placeholderText: "YYYY-MM-DD"
     property bool isViewOnly: false
-    
+    property string errorText: ""
+
     signal inputValueChanged(string key, var val)
 
     Layout.fillWidth: true
@@ -31,28 +32,26 @@ ColumnLayout {
         leftPadding: 12
         rightPadding: (!root.isViewOnly && field.text === "") ? todayBtn.width + 12 : 32
         font { pixelSize: 12; family: appTheme.rethinkSansFontName }
-        
+
         readOnly: root.isViewOnly
         color: root.isViewOnly ? "#666666" : "#333"
         placeholderTextColor: "#AAAAAA"
-        
+
         text: root.value !== undefined ? root.value : ""
         onTextEdited: root.inputValueChanged(root.fieldKey, text)
 
         background: Rectangle {
             radius: 15
             color: root.isViewOnly ? "#EEEEEE" : "transparent"
-            border.color: root.isViewOnly ? "transparent" : (field.activeFocus ? appTheme.activeColor : "#888888")
+            border.color: root.isViewOnly ? "transparent" : (root.errorText !== "" ? "#E53935" : (field.activeFocus ? appTheme.activeColor : "#888888"))
             border.width: field.activeFocus && !root.isViewOnly ? 2 : (root.isViewOnly ? 0 : 0.75)
         }
 
-        HoverHandler { 
-            id: hover 
-        }
-        
-        transform: Translate { 
+        HoverHandler { id: hover }
+
+        transform: Translate {
             y: (hover.hovered && !root.isViewOnly) ? -2 : 0
-            Behavior on y { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } } 
+            Behavior on y { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
         }
 
         Rectangle {
@@ -65,24 +64,24 @@ ColumnLayout {
             width: todayRow.implicitWidth + 16
             radius: 12
             color: todayMouseArea.containsMouse ? "#E5E7EB" : "transparent"
-            
+
             Row {
                 id: todayRow
                 anchors.centerIn: parent
                 spacing: 4
-                
-                Image { 
+
+                Image {
                     source: "../../../../../assets/icons/calendar.svg"
                     sourceSize: Qt.size(12, 12)
                     opacity: 1.0
-                    anchors.verticalCenter: parent.verticalCenter 
+                    anchors.verticalCenter: parent.verticalCenter
                 }
-                
-                Text { 
+
+                Text {
                     text: "Today"
                     font { pixelSize: 11; family: appTheme.rethinkSansFontName }
                     color: "#555"
-                    anchors.verticalCenter: parent.verticalCenter 
+                    anchors.verticalCenter: parent.verticalCenter
                 }
             }
 
@@ -92,12 +91,11 @@ ColumnLayout {
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 preventStealing: true
-                
+
                 onClicked: (mouse) => {
                     var d = Qt.formatDate(new Date(), "yyyy-MM-dd")
                     field.text = d
                     root.inputValueChanged(root.fieldKey, d)
-
                     mouse.accepted = true
                 }
             }
@@ -112,8 +110,8 @@ ColumnLayout {
             anchors.rightMargin: 8
             anchors.verticalCenter: parent.verticalCenter
             color: clearMouseArea.containsMouse ? "#E5E7EB" : "transparent"
-            
-            Image { 
+
+            Image {
                 anchors.centerIn: parent
                 source: "../../../../../assets/icons/close.svg"
                 sourceSize: Qt.size(12, 12)
@@ -126,7 +124,7 @@ ColumnLayout {
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 preventStealing: true
-                
+
                 onClicked: (mouse) => {
                     field.text = ""
                     root.inputValueChanged(root.fieldKey, "")
@@ -134,5 +132,14 @@ ColumnLayout {
                 }
             }
         }
+    }
+
+    Text {
+        visible: root.errorText !== ""
+        text: root.errorText
+        color: "#E53935"
+        font { pixelSize: 11; family: appTheme.rethinkSansFontName }
+        wrapMode: Text.WordWrap
+        Layout.fillWidth: true
     }
 }

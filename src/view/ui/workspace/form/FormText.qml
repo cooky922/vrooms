@@ -10,7 +10,8 @@ ColumnLayout {
     property string placeholderText: ""
     property var value: ""
     property bool isViewOnly: false
-    
+    property string errorText: ""
+
     signal inputValueChanged(string key, var val)
 
     Layout.fillWidth: true
@@ -31,28 +32,26 @@ ColumnLayout {
         leftPadding: 12
         rightPadding: 32
         font { pixelSize: 12; family: appTheme.rethinkSansFontName }
-        
+
         readOnly: root.isViewOnly
         color: root.isViewOnly ? "#666666" : "#333"
         placeholderTextColor: "#AAAAAA"
-        
+
         text: root.value !== undefined ? root.value : ""
         onTextEdited: root.inputValueChanged(root.fieldKey, text)
 
         background: Rectangle {
             radius: 15
             color: root.isViewOnly ? "#EEEEEE" : "transparent"
-            border.color: root.isViewOnly ? "transparent" : (field.activeFocus ? appTheme.activeColor : "#888888")
+            border.color: root.isViewOnly ? "transparent" : (root.errorText !== "" ? "#E53935" : (field.activeFocus ? appTheme.activeColor : "#888888"))
             border.width: field.activeFocus && !root.isViewOnly ? 2 : (root.isViewOnly ? 0 : 0.75)
         }
 
-        HoverHandler { 
-            id: hover 
-        }
-        
-        transform: Translate { 
+        HoverHandler { id: hover }
+
+        transform: Translate {
             y: (hover.hovered && !root.isViewOnly) ? -2 : 0
-            Behavior on y { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } } 
+            Behavior on y { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
         }
 
         Rectangle {
@@ -64,25 +63,31 @@ ColumnLayout {
             anchors.rightMargin: 8
             anchors.verticalCenter: parent.verticalCenter
             color: clearHover.hovered ? "#E5E7EB" : "transparent"
-            
-            Image { 
+
+            Image {
                 anchors.centerIn: parent
                 source: "../../../../../assets/icons/close.svg"
                 sourceSize: Qt.size(12, 12)
                 opacity: 1.0
             }
-            
-            HoverHandler { 
-                id: clearHover
-                cursorShape: Qt.PointingHandCursor 
-            }
-            
-            TapHandler { 
-                onTapped: { 
+
+            HoverHandler { id: clearHover; cursorShape: Qt.PointingHandCursor }
+
+            TapHandler {
+                onTapped: {
                     field.text = ""
-                    root.inputValueChanged(root.fieldKey, "") 
-                } 
+                    root.inputValueChanged(root.fieldKey, "")
+                }
             }
         }
+    }
+
+    Text {
+        visible: root.errorText !== ""
+        text: root.errorText
+        color: "#E53935"
+        font { pixelSize: 11; family: appTheme.rethinkSansFontName }
+        wrapMode: Text.WordWrap
+        Layout.fillWidth: true
     }
 }

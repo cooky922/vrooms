@@ -10,7 +10,8 @@ ColumnLayout {
     property bool isRequired: false
     property var value: ""
     property bool isViewOnly: false
-    
+    property string errorText: ""
+
     signal inputValueChanged(string key, var val)
 
     Layout.fillWidth: true
@@ -23,7 +24,7 @@ ColumnLayout {
         color: "#333"
     }
 
-    FileDialog { 
+    FileDialog {
         id: imageDialog
         title: "Select File"
         nameFilters: ["Files (*.*)"]
@@ -47,22 +48,22 @@ ColumnLayout {
             }
             return 90
         }
-        
+
         radius: 12
-        
+
         color: {
             if (root.isViewOnly) return "#EEEEEE"
             if (root.value && root.value !== "") return "#C2E7FF"
             if (dropArea.containsDrag && !root.isViewOnly) return "#EBF3FB"
             return "transparent"
         }
-        
-        border.color: root.isViewOnly ? "transparent" : (dropArea.containsDrag ? appTheme.activeColor : "#888888")
+
+        border.color: root.isViewOnly ? "transparent" : (root.errorText !== "" ? "#E53935" : (dropArea.containsDrag ? appTheme.activeColor : "#888888"))
         border.width: (root.isViewOnly || (root.value && root.value !== "")) ? 0 : 0.75
-        
-        transform: Translate { 
+
+        transform: Translate {
             y: (fileMouseArea.containsMouse && !root.isViewOnly) ? -2 : 0
-            Behavior on y { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } } 
+            Behavior on y { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
         }
 
         Rectangle {
@@ -86,28 +87,25 @@ ColumnLayout {
             Image {
                 id: previewImage
                 anchors.fill: parent
-                fillMode: Image.PreserveAspectCrop 
-                
+                fillMode: Image.PreserveAspectCrop
+
                 source: {
                     if (!root.isViewOnly || !root.value || root.value === "") return ""
-                    
                     let path = root.value.toString()
-                    
                     if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("file://")) {
                         return path
                     }
-                    
                     return "file:///" + path.replace(/\\/g, "/")
                 }
             }
-            
+
             Rectangle {
                 anchors.bottom: parent.bottom
                 anchors.left: parent.left
                 anchors.right: parent.right
                 height: 24
                 color: "#B3000000"
-                
+
                 Text {
                     anchors.fill: parent
                     anchors.leftMargin: 12
@@ -125,7 +123,7 @@ ColumnLayout {
             anchors.centerIn: parent
             spacing: 4
             visible: root.isViewOnly && (!root.value || root.value === "" || previewImage.status === Image.Error || previewImage.status === Image.Null)
-            
+
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: (!root.value || root.value === "") ? "No image attached" : "Image failed to load"
@@ -146,14 +144,14 @@ ColumnLayout {
             anchors.centerIn: parent
             spacing: 4
             visible: !root.isViewOnly
-            
-            Image { 
+
+            Image {
                 anchors.horizontalCenter: parent.horizontalCenter
                 source: "../../../../../assets/icons/upload.svg"
                 sourceSize: Qt.size(28, 28)
-                opacity: 0.55 
+                opacity: 0.55
             }
-            
+
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: {
@@ -169,7 +167,7 @@ ColumnLayout {
                 elide: Text.ElideMiddle
                 width: Math.min(implicitWidth, fileUpload.width - 32)
             }
-            
+
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: "Drag and Drop Files"
@@ -188,40 +186,40 @@ ColumnLayout {
             height: 20
             radius: 10
             color: clearFileMouse.containsMouse ? "#1A001D35" : "transparent"
-            z: 10 
-            
-            Image { 
+            z: 10
+
+            Image {
                 anchors.centerIn: parent
                 source: "../../../../../assets/icons/close.svg"
                 sourceSize: Qt.size(12, 12)
-                opacity: 1.0 
+                opacity: 1.0
             }
-            
-            MouseArea { 
+
+            MouseArea {
                 id: clearFileMouse
                 anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor 
+                cursorShape: Qt.PointingHandCursor
                 hoverEnabled: true
-                
-                onClicked: (mouse) => { 
-                    root.inputValueChanged(root.fieldKey, "") 
-                    mouse.accepted = true 
-                } 
+
+                onClicked: (mouse) => {
+                    root.inputValueChanged(root.fieldKey, "")
+                    mouse.accepted = true
+                }
             }
         }
 
-        DropArea { 
+        DropArea {
             id: dropArea
             anchors.fill: parent
             enabled: !root.isViewOnly
-            onDropped: (drop) => { 
+            onDropped: (drop) => {
                 if (drop.hasUrls && !root.isViewOnly) {
-                    root.inputValueChanged(root.fieldKey, drop.urls[0]) 
+                    root.inputValueChanged(root.fieldKey, drop.urls[0])
                 }
-            } 
+            }
         }
 
-        MouseArea { 
+        MouseArea {
             id: fileMouseArea
             anchors.fill: parent
             hoverEnabled: true
@@ -229,10 +227,18 @@ ColumnLayout {
             preventStealing: true
             cursorShape: root.isViewOnly ? Qt.ArrowCursor : Qt.PointingHandCursor
             onClicked: (mouse) => {
-                imageDialog.open() 
+                imageDialog.open()
                 mouse.accepted = true
             }
-
         }
+    }
+
+    Text {
+        visible: root.errorText !== ""
+        text: root.errorText
+        color: "#E53935"
+        font { pixelSize: 11; family: appTheme.rethinkSansFontName }
+        wrapMode: Text.WordWrap
+        Layout.fillWidth: true
     }
 }

@@ -10,7 +10,8 @@ ColumnLayout {
     property var options: []
     property var value: ""
     property bool isViewOnly: false
-    
+    property string errorText: ""
+
     signal inputValueChanged(string key, var val)
 
     Layout.fillWidth: true
@@ -32,13 +33,14 @@ ColumnLayout {
             id: dropdown
             visible: !root.isViewOnly
             anchors.fill: parent
-            menuWidth: dropdown.width 
+            menuWidth: dropdown.width
             isSmall: true
             label: "Select " + root.label
             fontName: appTheme.rethinkSansFontName
             model: root.options
             selectedValue: root.value !== undefined ? root.value : ""
-            
+            borderColor: root.errorText !== "" ? "#E53935" : undefined
+
             onSelectedValueChanged: {
                 if (!root.isViewOnly && root.value !== selectedValue) {
                     root.inputValueChanged(root.fieldKey, selectedValue)
@@ -52,18 +54,26 @@ ColumnLayout {
             radius: 15
             color: "#EEEEEE"
             border.width: 0
-            
+
             Text {
                 anchors.fill: parent
                 anchors.leftMargin: 12
                 anchors.rightMargin: 12
                 verticalAlignment: Text.AlignVCenter
-                
                 text: (root.value !== undefined && root.value !== "") ? root.value : "-"
                 font { pixelSize: 12; family: appTheme.rethinkSansFontName }
                 color: "#666666"
                 elide: Text.ElideRight
             }
         }
+    }
+
+    Text {
+        visible: root.errorText !== ""
+        text: root.errorText
+        color: "#E53935"
+        font { pixelSize: 11; family: appTheme.rethinkSansFontName }
+        wrapMode: Text.WordWrap
+        Layout.fillWidth: true
     }
 }
