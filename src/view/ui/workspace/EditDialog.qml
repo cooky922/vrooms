@@ -189,6 +189,7 @@ Popup {
                             item.fieldKey   = modelData.key
                             item.label      = modelData.label
                             item.isRequired = modelData.required || false
+                            item.isViewOnly = modelData.is_primary_key || false
 
                             if (modelData.placeholder) {
                                 item.placeholderText = modelData.placeholder
