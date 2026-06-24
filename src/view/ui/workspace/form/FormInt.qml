@@ -61,10 +61,18 @@ ColumnLayout {
             visible: !root.isViewOnly && field.text !== ""
             width: 20; height: 20; radius: 10
             anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
-            color: clearHover.hovered ? "#E5E7EB" : "transparent"
+            color: clearMouseArea.containsMouse ? "#E5E7EB" : "transparent"
             Image { anchors.centerIn: parent; source: "../../../../../assets/icons/close.svg"; sourceSize: Qt.size(12, 12); opacity: 1.0 }
-            HoverHandler { id: clearHover; cursorShape: Qt.PointingHandCursor }
-            TapHandler { onTapped: { field.text = ""; root.inputValueChanged(root.fieldKey, "") } }
+            MouseArea {
+                id: clearMouseArea
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    field.text = ""
+                    root.inputValueChanged(root.fieldKey, "")
+                }
+            }
         }
     }
 

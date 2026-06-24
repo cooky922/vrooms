@@ -64,7 +64,7 @@ Popup {
     }
 
     function validateForm() {
-        let result = dataViewController.validateRecord(root.oldData, root.formData, "edit")
+        let result = appDataViewController.validateRecord(root.oldData, root.formData, "edit")
         root.formErrors = result.errors || {}
         root.isFormValid = result.isValid
     }
@@ -81,7 +81,7 @@ Popup {
         formErrors = {}
         // Run validation so the Save button reflects correctness immediately,
         // but without showing error text until the user edits a field.
-        let result = dataViewController.validateRecord(root.oldData, formData, "edit")
+        let result = appDataViewController.validateRecord(root.oldData, formData, "edit")
         isFormValid = result.isValid
     }
 

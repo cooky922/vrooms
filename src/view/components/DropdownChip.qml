@@ -13,6 +13,7 @@ Item {
     property bool isSmall: false
     property color parentBgColor: "#FFFFFF"
     property string fontName: appTheme.inclusiveSansFontName
+    property color borderColor: root.hasSelection ? "transparent" : "#888888"
 
     property real menuWidth: 0
 
@@ -76,7 +77,8 @@ Item {
             radius: height / 2
             
             color: root.hasSelection ? "#C2E7FF" : "transparent"
-            border.color: root.hasSelection ? "transparent" : "#888888"
+            // border.color: root.hasSelection ? "transparent" : "#888888"
+            border.color: root.borderColor
             border.width: root.hasSelection ? 0 : 0.75
 
             Behavior on color { ColorAnimation { duration: 150 } }

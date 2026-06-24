@@ -63,7 +63,7 @@ Popup {
     }
 
     function validateForm() {
-        let result = dataViewController.validateRecord({}, root.formData, "add")
+        let result = appDataViewController.validateRecord({}, root.formData, "add")
         root.formErrors = result.errors || {}
         root.isFormValid = result.isValid
     }

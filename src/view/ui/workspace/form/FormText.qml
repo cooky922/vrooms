@@ -62,7 +62,7 @@ ColumnLayout {
             anchors.right: parent.right
             anchors.rightMargin: 8
             anchors.verticalCenter: parent.verticalCenter
-            color: clearHover.hovered ? "#E5E7EB" : "transparent"
+            color: clearMouseArea.containsMouse ? "#E5E7EB" : "transparent"
 
             Image {
                 anchors.centerIn: parent
@@ -71,10 +71,14 @@ ColumnLayout {
                 opacity: 1.0
             }
 
-            HoverHandler { id: clearHover; cursorShape: Qt.PointingHandCursor }
+            // HoverHandler { id: clearHover; cursorShape: Qt.PointingHandCursor }
 
-            TapHandler {
-                onTapped: {
+            MouseArea {
+                id: clearMouseArea
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
                     field.text = ""
                     root.inputValueChanged(root.fieldKey, "")
                 }
