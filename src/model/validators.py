@@ -35,14 +35,14 @@ def validate_rent_field(field: RentField, value):
     info = field.value
     _require_nonempty(value, info)
     _max_length(value, info)
-    if field == RentField.RENTAL_STATUS and value not in RENTAL_STATUS_OPTIONS:
-        raise ValidationError(f'Rental Status must be one of: {", ".join(RENTAL_STATUS_OPTIONS)}.')
-    if field == RentField.RENTAL_BASE_COST:
+    if field == RentField.RENT_STATUS and value not in RENTAL_STATUS_OPTIONS:
+        raise ValidationError(f'Rent Status must be one of: {", ".join(RENTAL_STATUS_OPTIONS)}.')
+    if field == RentField.RENT_BASE_COST:
         try:
             if float(value) < 0:
-                raise ValidationError('Rental Base Cost must be a non-negative number.')
+                raise ValidationError('Rent Base Cost must be a non-negative number.')
         except (TypeError, ValueError):
-            raise ValidationError('Rental Base Cost must be a valid number.')
+            raise ValidationError('Rent Base Cost must be a valid number.')
 
 def validate_payment_field(field: PaymentField, value):
     info = field.value

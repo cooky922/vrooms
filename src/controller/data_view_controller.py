@@ -21,6 +21,7 @@ from src.model.validators import (
     LIABILITY_TYPE_OPTIONS,
 )
 
+
 class QMLDataViewController(QObject):
     selectedEntityChanged = pyqtSignal()
     paginationChanged     = pyqtSignal()
@@ -32,23 +33,24 @@ class QMLDataViewController(QObject):
         self.table_model = table_model
         self.entity_kind = EntityKind.UNIT
 
-        self._page_index = 0
-        self._page_size = 10
-        self._visible_item_count = 0
-        self._total_item_count = 0
+        self._page_index          = 0
+        self._page_size           = 10
+        self._visible_item_count  = 0
+        self._total_item_count    = 0
 
-        self._filter_options = {}
+        self._filter_options      = {}
 
-        self._sort_field_index = 0
-        self._sort_ascending = True
+        self._sort_field_index    = 0
+        self._sort_ascending      = True
 
-        self._search_text = ''
+        self._search_text         = ''
         self._search_filter_index = 0
-        self._search_match_type = SearchMatchType.CONTAINS
+        self._search_match_type   = SearchMatchType.CONTAINS
 
         self.refreshTable()
 
-    # Properties
+    # ── Properties ────────────────────────────────────────────────────────────
+
     @pyqtProperty(int, notify=paginationChanged)
     def totalItemCount(self): return self._total_item_count
 
@@ -90,19 +92,19 @@ class QMLDataViewController(QObject):
     def searchFilterIndex(self): return self._search_filter_index
 
     @pyqtProperty(int, notify=searchChanged)
-    def searchMatchType(self): 
-        return self._search_match_type.value
+    def searchMatchType(self): return self._search_match_type.value
 
     @pyqtProperty('QVariantList', notify=selectedEntityChanged)
     def selectedEntityTransformedModel(self):
         fields = self.entity_kind.get_model()
+
         def get_options(field_name: str):
             match field_name:
                 case 'unitStatus':
                     return UNIT_STATUS_OPTIONS
                 case 'customerStatus':
                     return CUSTOMER_STATUS_OPTIONS
-                case 'rentalStatus':
+                case 'rentStatus':
                     return RENTAL_STATUS_OPTIONS
                 case 'paymentType':
                     return PAYMENT_TYPE_OPTIONS
@@ -112,19 +114,21 @@ class QMLDataViewController(QObject):
                     return LIABILITY_TYPE_OPTIONS
                 case 'customerID' if self.entity_kind == EntityKind.RENT:
                     return CustomerRepository.get_keys()
-                case 'unitPlateNumber' if self.entity_kind == EntityKind.RENT:
+                case 'unitID' if self.entity_kind == EntityKind.RENT:
                     return UnitRepository.get_keys()
-                case 'rentalID' if self.entity_kind in (EntityKind.PAYMENT, EntityKind.LIABILITY):
+                case 'rentID' if self.entity_kind in (EntityKind.PAYMENT, EntityKind.LIABILITY):
                     return RentRepository.get_keys()
                 case _:
                     return []
+
         return [{
             'internal_name': f.value.internal_name,
             'display_name':  f.value.display_name,
-            'options':       get_options(f.value.internal_name)
+            'options':       get_options(f.value.internal_name),
         } for f in fields]
 
-    # Slots
+    # ── Slots ─────────────────────────────────────────────────────────────────
+
     @pyqtSlot(str)
     def reselectEntity(self, entity_name: str):
         if self.selectedEntityName != entity_name:
@@ -135,10 +139,10 @@ class QMLDataViewController(QObject):
                 'payment':   EntityKind.PAYMENT,
                 'liability': EntityKind.LIABILITY,
             }
-            self.entity_kind = kind_map.get(entity_name, EntityKind.UNIT)
-            self._page_index = 0
+            self.entity_kind       = kind_map.get(entity_name, EntityKind.UNIT)
+            self._page_index       = 0
             self._sort_field_index = 0
-            self._sort_ascending = True
+            self._sort_ascending   = True
             self.resetSearchOptions()
             self.resetFilterOptions()
             self.sortStateChanged.emit()
@@ -156,9 +160,9 @@ class QMLDataViewController(QObject):
 
     @pyqtSlot()
     def resetSearchOptions(self):
-        self._search_text = ''
+        self._search_text         = ''
         self._search_filter_index = 0
-        self._search_match_type = SearchMatchType.CONTAINS
+        self._search_match_type   = SearchMatchType.CONTAINS
         self.searchChanged.emit()
 
     @pyqtSlot(int)
@@ -171,8 +175,8 @@ class QMLDataViewController(QObject):
                 self.refreshTable()
 
     @pyqtSlot(int)
-    def setSearchMatchType(self, index : int):
-        new_match_type = SearchMatchType(index) 
+    def setSearchMatchType(self, index: int):
+        new_match_type = SearchMatchType(index)
         if self._search_match_type != new_match_type:
             self._search_match_type = new_match_type
             self.searchChanged.emit()
@@ -184,7 +188,7 @@ class QMLDataViewController(QObject):
         self._filter_options = {}
 
     @pyqtSlot(str, str)
-    def setFilterOption(self, field_key : str, value : str):
+    def setFilterOption(self, field_key: str, value: str):
         if value and value != '':
             self._filter_options[field_key] = value
         elif field_key in self._filter_options:
@@ -206,10 +210,10 @@ class QMLDataViewController(QObject):
         self.refreshTable()
 
     @pyqtSlot(int, bool)
-    def setSortOptions(self, field_index : int, ascending: bool):
+    def setSortOptions(self, field_index: int, ascending: bool):
         if self._sort_field_index != field_index or self._sort_ascending != ascending:
             self._sort_field_index = field_index
-            self._sort_ascending = ascending
+            self._sort_ascending   = ascending
             self.sortStateChanged.emit()
             self.paginationChanged.emit()
             self.refreshTable()
@@ -277,9 +281,9 @@ class QMLDataViewController(QObject):
         errors       = {}
         is_valid     = True
 
-        repo = REPOSITORY_MAP[self.entity_kind]
+        repo      = REPOSITORY_MAP[self.entity_kind]
         parent_id = current_data.get(repo.PARENT_FK) if repo.PARENT_FK else None
-        
+
         for col in repo.get_columns():
             val = current_data.get(col, '')
             try:
@@ -303,7 +307,9 @@ class QMLDataViewController(QObject):
 
     @pyqtSlot(str, str, result='QVariantMap')
     def getRecordByKey(self, key, parent_id=''):
-        return REPOSITORY_MAP[self.entity_kind].get_record(key, parent_id=parent_id if parent_id else None) or {}
+        return REPOSITORY_MAP[self.entity_kind].get_record(
+            key, parent_id=parent_id if parent_id else None
+        ) or {}
 
     @pyqtSlot('QVariantMap', result='QVariantMap')
     def addRecord(self, new_data):
@@ -318,11 +324,11 @@ class QMLDataViewController(QObject):
     @pyqtSlot('QVariantMap', 'QVariantMap', result='QVariantMap')
     def updateRecord(self, old_data, new_data):
         try:
-            repo = REPOSITORY_MAP[self.entity_kind]
+            repo          = REPOSITORY_MAP[self.entity_kind]
             primary_key   = self.getPrimaryKey()
             old_key_value = str(old_data[primary_key])
             parent_id     = str(old_data[repo.PARENT_FK]) if repo.PARENT_FK else None
-            
+
             repo.update_record(self.normalizeRecord(new_data), key=old_key_value, parent_id=parent_id)
             return {'success': True, 'message': 'One item updated successfully.'}
         except Exception as e:
@@ -343,11 +349,11 @@ class QMLDataViewController(QObject):
     @pyqtSlot('QVariantMap', result='QVariantMap')
     def deleteRecord(self, old_data):
         try:
-            repo = REPOSITORY_MAP[self.entity_kind]
+            repo        = REPOSITORY_MAP[self.entity_kind]
             primary_key = self.getPrimaryKey()
-            key_value = str(old_data[primary_key])
-            parent_id = str(old_data[repo.PARENT_FK]) if repo.PARENT_FK else None
-            
+            key_value   = str(old_data[primary_key])
+            parent_id   = str(old_data[repo.PARENT_FK]) if repo.PARENT_FK else None
+
             repo.delete_record(key=key_value, parent_id=parent_id)
             return {'success': True, 'message': 'One item deleted successfully.'}
         except Exception as e:
@@ -365,12 +371,13 @@ class QMLDataViewController(QObject):
         finally:
             self.refreshTable()
 
-    # Internal methods (cannot be used outside this file)
+    # ── Internal ──────────────────────────────────────────────────────────────
+
     def normalizeRecord(self, data: dict) -> dict:
         new_data = {}
         repo     = REPOSITORY_MAP[self.entity_kind]
         for k, v in data.items():
-            if k in ('dailyRate', 'rentalBaseCost', 'amountPaid', 'liabilityFee'):
+            if k in ('dailyRate', 'rentBaseCost', 'amountPaid', 'liabilityFee'):
                 new_data[k] = float(v) if (v is not None and v != '') else None
             elif v is None or v == '':
                 new_data[k] = None
@@ -392,7 +399,7 @@ class QMLDataViewController(QObject):
             if self._search_filter_index == 0:
                 search_request = Search(text=text, match_type=self._search_match_type)
             else:
-                field = columns[self._search_filter_index - 1]
+                field          = columns[self._search_filter_index - 1]
                 search_request = Search(text=text, field=field, match_type=self._search_match_type)
 
         paged_request  = Paged.Specific(index=self._page_index + 1, size=self._page_size)
@@ -400,15 +407,15 @@ class QMLDataViewController(QObject):
         filter_request = Filter.By(options=self._filter_options)
 
         self._total_item_count = REPOSITORY_MAP[self.entity_kind].get_count(
-            search=search_request, 
-            filter_opt=filter_request
+            search=search_request,
+            filter_opt=filter_request,
         )
 
         entries = REPOSITORY_MAP[self.entity_kind].get_records(
             search=search_request,
             sorted=sorted_request,
             paged=paged_request,
-            filter_opt=filter_request
+            filter_opt=filter_request,
         )
 
         self.table_model.resetModel(self.entity_kind, entries)
