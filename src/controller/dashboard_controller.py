@@ -8,15 +8,15 @@ class QMLDashboardController(QObject):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._total_customers        = 0
-        self._total_units            = 0
-        self._total_rents            = 0
-        self._active_rents           = 0
-        self._available_units        = 0
-        self._units_by_status_data   = []
-        self._rents_by_status_data   = []
-        self._revenue_by_customer    = []
-        self._top_rented_units       = []
+        self._total_customers      = 0
+        self._total_units          = 0
+        self._total_rents          = 0
+        self._active_rents         = 0
+        self._available_units      = 0
+        self._units_by_status_data = []
+        self._rents_by_status_data = []
+        self._revenue_by_customer  = []
+        self._top_rented_units     = []
 
     @pyqtProperty(int, notify=dataChanged)
     def totalCustomers(self): return self._total_customers
@@ -51,36 +51,37 @@ class QMLDashboardController(QObject):
         self._total_units     = UnitRepository.get_count()
         self._total_rents     = RentRepository.get_count()
 
-        self._active_rents    = SQLDatabase.fetch_scalar(
-            "SELECT COUNT(*) FROM rents WHERE rental_status = 'Active'"
+        self._active_rents = SQLDatabase.fetch_scalar(
+            "SELECT COUNT(*) FROM rents WHERE rentStatus = 'Active'"
         ) or 0
 
         self._available_units = SQLDatabase.fetch_scalar(
-            "SELECT COUNT(*) FROM units WHERE unit_status = 'Available'"
+            "SELECT COUNT(*) FROM units WHERE unitStatus = 'Available'"
         ) or 0
 
         self._units_by_status_data = SQLDatabase.fetch_all(
-            "SELECT unit_status AS label, COUNT(*) AS value FROM units GROUP BY unit_status"
+            "SELECT unitStatus AS label, COUNT(*) AS value FROM units GROUP BY unitStatus"
         ) or []
 
         self._rents_by_status_data = SQLDatabase.fetch_all(
-            "SELECT rental_status AS label, COUNT(*) AS value FROM rents GROUP BY rental_status"
+            "SELECT rentStatus AS label, COUNT(*) AS value FROM rents GROUP BY rentStatus"
         ) or []
 
         self._revenue_by_customer = SQLDatabase.fetch_all("""
-            SELECT c.customer_id AS label,
-                   SUM(r.rental_base_cost) AS value
+            SELECT c.customerID AS label,
+                   SUM(r.rentBaseCost) AS value
             FROM rents r
-            JOIN customers c ON r.customer_id = c.customer_id
-            GROUP BY c.customer_id
+            JOIN customers c ON r.customerID = c.customerID
+            GROUP BY c.customerID
             ORDER BY value DESC
             LIMIT 10
         """) or []
 
         self._top_rented_units = SQLDatabase.fetch_all("""
-            SELECT plate_number AS label, COUNT(*) AS value
-            FROM rents
-            GROUP BY plate_number
+            SELECT u.plateNumber AS label, COUNT(*) AS value
+            FROM rents r
+            JOIN units u ON r.unitID = u.unitID
+            GROUP BY r.unitID
             ORDER BY value DESC
             LIMIT 10
         """) or []

@@ -6,35 +6,33 @@ from .fields import (
     CustomerField, UnitField, RentField, PaymentField, LiabilityField
 )
 from .validators import (
-    validate_customer_field, 
-    validate_unit_field, 
+    validate_customer_field,
+    validate_unit_field,
     validate_rent_field,
-    validate_payment_field, 
-    validate_liability_field
+    validate_payment_field,
+    validate_liability_field,
 )
 
 def _build_where(search: Optional[Search], columns: list[str]) -> tuple[str, list]:
     if not search or not search.text:
         return '', []
-    
+
     op = '=' if search.match_type == SearchMatchType.EXACTLY else 'LIKE'
-    pattern = ''
     match search.match_type:
         case SearchMatchType.CONTAINS:
-            pattern = f'%{search.text}%' 
+            pattern = f'%{search.text}%'
         case SearchMatchType.EXACTLY:
             pattern = search.text
         case SearchMatchType.STARTS_WITH:
             pattern = f'{search.text}%'
         case SearchMatchType.ENDS_WITH:
             pattern = f'%{search.text}'
-    
-    params = []
+
     if search.field:
         clause = f'WHERE LOWER({search.field}) {op} ?'
-        params.append(pattern.lower())
+        params = [pattern.lower()]
     else:
-        parts = [f'LOWER({col}) {op} ?' for col in columns]
+        parts  = [f'LOWER({col}) {op} ?' for col in columns]
         clause = 'WHERE ' + ' OR '.join(parts)
         params = [pattern.lower()] * len(columns)
     return clause, params
@@ -53,10 +51,11 @@ def _build_limit_offset(paged: Optional[Paged]) -> tuple[str, list]:
         return 'LIMIT ? OFFSET ?', [paged.size, offset]
     return 'LIMIT ?', [paged.size]
 
+
 class BaseRepository:
-    TABLE: str = ''
-    PK: str = ''
-    COLUMNS: list[str] = []
+    TABLE:     str = ''
+    PK:        str = ''
+    COLUMNS:   list[str] = []
     PARENT_FK: Optional[str] = None
     FIELD_ENUM = None
 
@@ -79,13 +78,13 @@ class BaseRepository:
 
     @classmethod
     def _build_base_clause(cls, parent_id: Optional[str], search: Optional[Search], filter_opt: Optional[Filter] = None) -> tuple[str, list]:
-        parts = []
+        parts  = []
         params = []
-        
+
         if cls.PARENT_FK and parent_id:
             parts.append(f'{cls.PARENT_FK} = ?')
             params.append(parent_id)
-            
+
         where, wp = _build_where(search, cls.COLUMNS)
         if wp:
             parts.append(where.replace('WHERE ', ''))
@@ -96,7 +95,7 @@ class BaseRepository:
                 if k in cls.COLUMNS:
                     parts.append(f'{k} = ?')
                     params.append(v)
-            
+
         clause = ('WHERE ' + ' AND '.join(parts)) if parts else ''
         return clause, params
 
@@ -106,16 +105,19 @@ class BaseRepository:
         return SQLDatabase.fetch_scalar(f'SELECT COUNT(*) FROM {cls.TABLE} {clause}', tuple(params)) or 0
 
     @classmethod
-    def get_records(cls, search = None, sorted = None, paged = None, filter_opt = None, parent_id: Optional[str] = None) -> list[dict]:
+    def get_records(cls, search=None, sorted=None, paged=None, filter_opt=None, parent_id: Optional[str] = None) -> list[dict]:
         clause, params = cls._build_base_clause(parent_id, search, filter_opt)
-        order = _build_order(sorted)
-        limit, lp = _build_limit_offset(paged)
+        order          = _build_order(sorted)
+        limit, lp      = _build_limit_offset(paged)
         return SQLDatabase.fetch_all(f'SELECT * FROM {cls.TABLE} {clause} {order} {limit}', tuple(params + lp))
 
     @classmethod
     def get_record(cls, key: str, parent_id: Optional[str] = None) -> Optional[dict]:
         if cls.PARENT_FK and parent_id:
-            return SQLDatabase.fetch_one(f'SELECT * FROM {cls.TABLE} WHERE {cls.PK} = ? AND {cls.PARENT_FK} = ?', (key, parent_id))
+            return SQLDatabase.fetch_one(
+                f'SELECT * FROM {cls.TABLE} WHERE {cls.PK} = ? AND {cls.PARENT_FK} = ?',
+                (key, parent_id)
+            )
         return SQLDatabase.fetch_one(f'SELECT * FROM {cls.TABLE} WHERE {cls.PK} = ?', (key,))
 
     @classmethod
@@ -127,39 +129,52 @@ class BaseRepository:
 
     @classmethod
     def add_record(cls, data: dict):
-        cols = ', '.join(cls.COLUMNS)
+        cols  = ', '.join(cls.COLUMNS)
         marks = ', '.join(['?'] * len(cls.COLUMNS))
-        SQLDatabase.execute(f'INSERT INTO {cls.TABLE} ({cols}) VALUES ({marks})',
-                            tuple(data.get(c) for c in cls.COLUMNS))
+        SQLDatabase.execute(
+            f'INSERT INTO {cls.TABLE} ({cols}) VALUES ({marks})',
+            tuple(data.get(c) for c in cls.COLUMNS)
+        )
 
     @classmethod
     def update_record(cls, updates: dict, key: str, parent_id: Optional[str] = None):
-        fields = [c for c in cls.COLUMNS if c not in (cls.PK, cls.PARENT_FK)]
+        fields     = [c for c in cls.COLUMNS if c not in (cls.PK, cls.PARENT_FK)]
         set_clause = ', '.join(f'{c} = ?' for c in fields)
-        vals = tuple(updates.get(c) for c in fields)
-        
+        vals       = tuple(updates.get(c) for c in fields)
+
         if cls.PARENT_FK and parent_id:
-            SQLDatabase.execute(f'UPDATE {cls.TABLE} SET {set_clause} WHERE {cls.PK} = ? AND {cls.PARENT_FK} = ?', vals + (key, parent_id))
+            SQLDatabase.execute(
+                f'UPDATE {cls.TABLE} SET {set_clause} WHERE {cls.PK} = ? AND {cls.PARENT_FK} = ?',
+                vals + (key, parent_id)
+            )
         else:
-            SQLDatabase.execute(f'UPDATE {cls.TABLE} SET {set_clause} WHERE {cls.PK} = ?', vals + (key,))
+            SQLDatabase.execute(
+                f'UPDATE {cls.TABLE} SET {set_clause} WHERE {cls.PK} = ?',
+                vals + (key,)
+            )
 
     @classmethod
     def delete_record(cls, key: str, parent_id: Optional[str] = None):
         if cls.PARENT_FK and parent_id:
-            SQLDatabase.execute(f'DELETE FROM {cls.TABLE} WHERE {cls.PK} = ? AND {cls.PARENT_FK} = ?', (key, parent_id))
+            SQLDatabase.execute(
+                f'DELETE FROM {cls.TABLE} WHERE {cls.PK} = ? AND {cls.PARENT_FK} = ?',
+                (key, parent_id)
+            )
         else:
             SQLDatabase.execute(f'DELETE FROM {cls.TABLE} WHERE {cls.PK} = ?', (key,))
 
     @classmethod
     def delete_records(cls, keys: list[str]):
-        if not keys: return
+        if not keys:
+            return
         marks = ', '.join(['?'] * len(keys))
         SQLDatabase.execute(f'DELETE FROM {cls.TABLE} WHERE {cls.PK} IN ({marks})', tuple(keys))
 
+
 class UnitRepository(BaseRepository):
-    TABLE   = 'units'
-    PK      = 'plateNumber'
-    COLUMNS = [f.value.internal_name for f in UnitField]
+    TABLE      = 'units'
+    PK         = 'unitID'
+    COLUMNS    = [f.value.internal_name for f in UnitField]
     FIELD_ENUM = UnitField
 
     @classmethod
@@ -169,16 +184,18 @@ class UnitRepository(BaseRepository):
     @classmethod
     def update_records(cls, keys: list[str], updates: dict):
         fields = [c for c in updates if c != cls.PK]
-        if not fields: return
+        if not fields:
+            return
         set_clause = ', '.join(f'{c} = ?' for c in fields)
-        vals = tuple(updates[c] for c in fields)
+        vals       = tuple(updates[c] for c in fields)
         for key in keys:
             SQLDatabase.execute(f'UPDATE {cls.TABLE} SET {set_clause} WHERE {cls.PK} = ?', vals + (key,))
 
+
 class CustomerRepository(BaseRepository):
-    TABLE   = 'customers'
-    PK      = 'customerID'
-    COLUMNS = [f.value.internal_name for f in CustomerField]
+    TABLE      = 'customers'
+    PK         = 'customerID'
+    COLUMNS    = [f.value.internal_name for f in CustomerField]
     FIELD_ENUM = CustomerField
 
     @classmethod
@@ -188,16 +205,18 @@ class CustomerRepository(BaseRepository):
     @classmethod
     def update_records(cls, keys: list[str], updates: dict):
         fields = [c for c in updates if c != cls.PK]
-        if not fields: return
+        if not fields:
+            return
         set_clause = ', '.join(f'{c} = ?' for c in fields)
-        vals = tuple(updates[c] for c in fields)
+        vals       = tuple(updates[c] for c in fields)
         for key in keys:
             SQLDatabase.execute(f'UPDATE {cls.TABLE} SET {set_clause} WHERE {cls.PK} = ?', vals + (key,))
 
+
 class RentRepository(BaseRepository):
-    TABLE   = 'rents'
-    PK      = 'rentalID'
-    COLUMNS = [f.value.internal_name for f in RentField]
+    TABLE      = 'rents'
+    PK         = 'rentID'
+    COLUMNS    = [f.value.internal_name for f in RentField]
     FIELD_ENUM = RentField
 
     @classmethod
@@ -207,16 +226,18 @@ class RentRepository(BaseRepository):
     @classmethod
     def update_records(cls, keys: list[str], updates: dict):
         fields = [c for c in updates if c != cls.PK]
-        if not fields: return
+        if not fields:
+            return
         set_clause = ', '.join(f'{c} = ?' for c in fields)
-        vals = tuple(updates[c] for c in fields)
+        vals       = tuple(updates[c] for c in fields)
         for key in keys:
             SQLDatabase.execute(f'UPDATE {cls.TABLE} SET {set_clause} WHERE {cls.PK} = ?', vals + (key,))
+
 
 class PaymentRepository(BaseRepository):
     TABLE      = 'payments'
     PK         = 'paymentID'
-    PARENT_FK  = 'rentalID'
+    PARENT_FK  = 'rentID'
     COLUMNS    = [f.value.internal_name for f in PaymentField]
     FIELD_ENUM = PaymentField
 
@@ -225,13 +246,14 @@ class PaymentRepository(BaseRepository):
         validate_payment_field(field, value)
 
     @classmethod
-    def delete_by_rental(cls, rental_id: str):
-        SQLDatabase.execute(f'DELETE FROM {cls.TABLE} WHERE {cls.PARENT_FK} = ?', (rental_id,))
+    def delete_by_rent(cls, rent_id: str):
+        SQLDatabase.execute(f'DELETE FROM {cls.TABLE} WHERE {cls.PARENT_FK} = ?', (rent_id,))
+
 
 class LiabilityRepository(BaseRepository):
     TABLE      = 'liabilities'
     PK         = 'liabilityID'
-    PARENT_FK  = 'rentalID'
+    PARENT_FK  = 'rentID'
     COLUMNS    = [f.value.internal_name for f in LiabilityField]
     FIELD_ENUM = LiabilityField
 
@@ -240,13 +262,14 @@ class LiabilityRepository(BaseRepository):
         validate_liability_field(field, value)
 
     @classmethod
-    def delete_by_rental(cls, rental_id: str):
-        SQLDatabase.execute(f'DELETE FROM {cls.TABLE} WHERE {cls.PARENT_FK} = ?', (rental_id,))
+    def delete_by_rent(cls, rent_id: str):
+        SQLDatabase.execute(f'DELETE FROM {cls.TABLE} WHERE {cls.PARENT_FK} = ?', (rent_id,))
+
 
 REPOSITORY_MAP = {
-    EntityKind.UNIT: UnitRepository,
-    EntityKind.CUSTOMER: CustomerRepository,
-    EntityKind.RENT: RentRepository,
-    EntityKind.PAYMENT: PaymentRepository,
-    EntityKind.LIABILITY: LiabilityRepository
+    EntityKind.UNIT:      UnitRepository,
+    EntityKind.CUSTOMER:  CustomerRepository,
+    EntityKind.RENT:      RentRepository,
+    EntityKind.PAYMENT:   PaymentRepository,
+    EntityKind.LIABILITY: LiabilityRepository,
 }
