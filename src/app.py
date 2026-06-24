@@ -2,7 +2,7 @@ import ctypes
 import os
 import sys
 import random
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from pathlib import Path
 from PyQt6.QtCore import QUrl
@@ -23,6 +23,7 @@ from src.model import (
 )
 from src.view.theme import FontLoader, QMLAppTheme
 from src.utils import QMLUtils
+from src.controller.dynamic_options import QMLDynamicOptions  # Dynamic dropdown options for QML
 
 class App(QApplication):
     windows_app_id = 'ccc151.vrooms.desktop_app.0_1'
@@ -30,9 +31,9 @@ class App(QApplication):
     app_icon_file_path = str(Path(__file__).parent.parent / 'assets' / 'icons' / 'app-logo.svg')
 
     def __init__(self):
-        # Load Database First
+        # TODO: Load Database First
         SQLDatabase.initialize()
-        # App.seedData()
+        #App.seedData()
 
         super().__init__([])
 
@@ -60,6 +61,7 @@ class App(QApplication):
         self.appDataTableModel = DataTableModel(self)
         self.appDataViewController = QMLDataViewController(self.appDataTableModel, self)
         self.appEntitySchemaMap = get_entity_schema_map()
+        self.appDynamicOptions = QMLDynamicOptions(self)  # Provides live dropdown data to QML
 
         # Prepare QML context properties and load file
         context = self.engine.rootContext()
@@ -68,6 +70,7 @@ class App(QApplication):
         context.setContextProperty('appDataTableModel', self.appDataTableModel)
         context.setContextProperty('appDataViewController', self.appDataViewController)
         context.setContextProperty('appEntitySchemaMap', self.appEntitySchemaMap)
+        context.setContextProperty('appDynamicOptions', self.appDynamicOptions)  # Expose to QML
         self.engine.load(QUrl.fromLocalFile(App.app_qml_file_path))
 
         # Return early if invalid (ex: QML errors)
@@ -91,147 +94,75 @@ class App(QApplication):
 
     @staticmethod
     def seedData():
-        makes = ["TOYOTA", "HONDA", "MITSUBISHI", "HYUNDAI", "ISUZU", "FORD", "NISSAN", "SUZUKI"]
-        series = ["VIOS", "CITY", "MIRAGE", "ACCENT", "D-MAX", "RANGER", "NAVARA", "SWIFT", "INNOVA", "HIACE"]
-        bodies = ["SEDAN", "SUV", "HATCHBACK", "PICKUP", "MPV"]
-        first_names = ["Juan", "Maria", "Jose", "Andres", "Gabriela", "Antonio", "Emilio", "Apolinario", "Gregoria", "Melchora", "Carlos", "Luis", "Carmen", "Teresa", "Manuel", "Rosario", "Francisco", "Elena", "Pedro", "Clara"]
-        last_names = ["Dela Cruz", "Clara", "Rizal", "Bonifacio", "Silang", "Luna", "Aguinaldo", "Mabini", "De Jesus", "Aquino", "Garcia", "Reyes", "Ramos", "Mendoza", "Santos", "Flores", "Gonzales", "Bautista", "Villanueva", "Fernandez"]
-
-        now = datetime.now()
-        today_date = now.strftime("%Y-%m-%d")
+        makes = ["TOYOTA", "HONDA", "MITSUBISHI", "HYUNDAI", "ISUZU"]
+        series = ["VIOS", "CITY", "MIRAGE", "ACCENT", "D-MAX"]
+        bodies = ["SEDAN", "SUV", "HATCHBACK"]
+        first_names = ["Juan", "Maria", "Jose", "Andres", "Gabriela", "Antonio", "Emilio", "Apolinario", "Gregoria", "Melchora"]
+        last_names = ["Dela Cruz", "Clara", "Rizal", "Bonifacio", "Silang", "Luna", "Aguinaldo", "Mabini", "De Jesus", "Aquino"]
 
         unit_keys = []
         cust_keys = []
+        # Store rental info as objects to allow matching payment amounts
+        rent_records = [] 
 
-        # 1. GENERATE 25 UNITS WITH VARIED STATUSES
-        for i in range(25):
+        # Format: YYYY-MM-DD (Time removed)
+        today_date = datetime.now().strftime("%Y-%m-%d")
+        rental_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # 1. GENERATE 10 UNITS
+        for i in range(10):
             plate = f"ABC-{100 + i}"
-            model_str = f"{random.choice(makes)} {random.choice(series)} {random.choice(bodies)} - 202{random.randint(0, 4)}"
+            model_str = f"{random.choice(makes)} {random.choice(series)} {random.choice(bodies)} - 2024"
             
-            # Organic Status Distribution
-            rand_val = random.random()
-            if rand_val < 0.60:
-                status = 'Available'
-            elif rand_val < 0.90:
-                status = 'Rented'
-            else:
-                status = 'Maintenance'
-                
             unit_data = {
                 "plateNumber": plate,
                 "unitModel": model_str,
-                "unitPicture": "", # Null/Empty Image Path
-                "unitStatus": status,
-                "dailyRate": float(random.randint(15, 45) * 100), 
+                "unitPicture": "default.jpg",
+                "unitStatus": "Available",
+                "dailyRate": float(random.randint(1000, 3000)), # Variation
                 "registrationDate": today_date
             }
             UnitRepository.add_record(unit_data)
-            # Store the auto-incremented unitID (i + 1) for foreign key relations later
-            unit_keys.append({"unitID": i + 1, "status": status})
+            unit_keys.append(plate)
 
-        # 2. GENERATE 25 CUSTOMERS WITH VARIED STATUSES
-        for i in range(25):
-            rand_val = random.random()
-            if rand_val < 0.8:
-                status = 'Active'
-            elif rand_val < 0.9:
-                status = 'Suspended'
-            else:
-                status = 'Blacklisted'
-
+        # 2. GENERATE 10 CUSTOMERS
+        for i in range(10):
             cust_data = {
-                "firstName": first_names[i % len(first_names)],
-                "lastName": last_names[i % len(last_names)],
-                "phoneNumber": f"0917{str(random.randint(1000000, 9999999))}", # Updated from contactNumber
+                "firstName": first_names[i],
+                "lastName": last_names[i],
+                "contactNumber": f"09170000{100 + i}",
                 "homeAddress": f"{i+1} Main St, Iligan City",
-                "driverLicenseID": f"LIC-{5000 + i}",
-                "driverLicenseIDPicture": "", # Null/Empty Image Path
-                "customerStatus": status,
-                "registrationDate": today_date 
+                "driverLicenseID": f"LIC-{500 + i}",
+                "driverLicenseIDPicture": "lic.jpg",
+                "customerStatus": "Active",
+                "registrationDate": today_date # Time removed
             }
             CustomerRepository.add_record(cust_data)
             cust_keys.append(i + 1) 
 
-        # 3. GENERATE LOGICALLY LINKED RENTS, PAYMENTS & LIABILITIES
-        rent_id_counter = 1
-        
-        for u in unit_keys:
-            u_id = u['unitID'] # Linking via unitID now
-            u_status = u['status']
-            c_id = random.choice(cust_keys)
-            
-            base_cost = float(random.randint(2000, 8000))
-            
-            rental_start_date = now - timedelta(days=random.randint(1, 30))
-            rental_time = rental_start_date.strftime("%Y-%m-%d %H:%M:%S")
-            
-            if u_status == 'Rented':
-                expected_return = (now + timedelta(days=random.randint(1, 5))).strftime("%Y-%m-%d %H:%M:%S")
-                
-                RentRepository.add_record({
-                    "customerID": c_id,
-                    "unitID": u_id, # Updated key
-                    "rentStatus": "Active", # Updated from rentalStatus
-                    "rentDateTime": rental_time, # Updated from rentalDateTime
-                    "expectedReturnDate": expected_return, # Updated from expectedReturnDateTime
-                    "rentBaseCost": base_cost, # Updated from rentalBaseCost
-                    "actualReturnDateTime": None
-                })
-                
-                # Add Payment for the Active Rental
-                PaymentRepository.add_record({
-                    "rentID": rent_id_counter, # Updated from rentalID
-                    "amountPaid": base_cost,
-                    "paymentDateTime": rental_time,
-                    "paymentType": "Base Fee"
-                })
-                rent_id_counter += 1
-                
-            elif u_status in ['Available', 'Maintenance']:
-                past_status = random.choice(['Completed', 'Completed', 'Cancelled', 'Returned with Liabilities'])
-                
-                actual_return = (rental_start_date + timedelta(days=random.randint(1, 3))).strftime("%Y-%m-%d %H:%M:%S")
-                expected_return = (rental_start_date + timedelta(days=random.randint(2, 4))).strftime("%Y-%m-%d %H:%M:%S")
-                
-                RentRepository.add_record({
-                    "customerID": c_id,
-                    "unitID": u_id,
-                    "rentStatus": past_status,
-                    "rentDateTime": rental_time,
-                    "expectedReturnDate": expected_return,
-                    "rentBaseCost": base_cost,
-                    "actualReturnDateTime": actual_return if past_status != 'Cancelled' else None
-                })
-                
-                if past_status != 'Cancelled':
-                    PaymentRepository.add_record({
-                        "rentID": rent_id_counter,
-                        "amountPaid": base_cost,
-                        "paymentDateTime": rental_time,
-                        "paymentType": "Base Fee"
-                    })
-                    
-                # Simulate a Liability scenario
-                if past_status == 'Returned with Liabilities':
-                    lia_fee = float(random.randint(500, 5000))
-                    lia_status = random.choice(['Active', 'Cleared'])
-                    
-                    LiabilityRepository.add_record({
-                        "rentID": rent_id_counter,
-                        "liabilityType": random.choice(['Overdue', 'Damage', 'Equipment Loss', 'Other']),
-                        "liabilityFee": lia_fee,
-                        "liabilityStatus": lia_status
-                    })
-                    
-                    # If cleared, generate a corresponding Liability payment
-                    if lia_status == 'Cleared':
-                        PaymentRepository.add_record({
-                            "rentID": rent_id_counter,
-                            "amountPaid": lia_fee, 
-                            "paymentDateTime": actual_return,
-                            "paymentType": "Liability Fee"
-                        })
-                    
-                rent_id_counter += 1
+        # 3. GENERATE 5 RENTALS
+        for i in range(5):
+            base_cost = float(random.randint(2000, 6000)) # Variation
+            rent_data = {
+                "customerID": cust_keys[i],
+                "unitPlateNumber": unit_keys[i],
+                "rentalStatus": "Active",
+                "rentalDateTime": rental_time,
+                "expectedReturnDateTime": "2026-06-10 18:00:00",
+                "rentalBaseCost": base_cost
+            }
+            RentRepository.add_record(rent_data)
+            # Store ID and cost so we can match the payment amount later
+            rent_records.append({"id": i + 1, "cost": base_cost})
 
-        print("Database seeded successfully with updated schema column names.")
+        # 4. GENERATE 5 PAYMENTS
+        for i in range(5):
+            pay_data = {
+                "rentalID": rent_records[i]["id"],
+                "amountPaid": rent_records[i]["cost"], # Paid exactly the base cost
+                "paymentDateTime": rental_time,
+                "paymentType": "Base Fee" 
+            }
+            PaymentRepository.add_record(pay_data)
+
+        print("Database seeded successfully with varied costs and clean dates.")

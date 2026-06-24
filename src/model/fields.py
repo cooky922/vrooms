@@ -26,9 +26,10 @@ class FieldInfo:
     required:       bool = True
     is_primary_key: bool = False
     is_foreign_key: bool = False
-    placeholder:    Optional[str] = None
-    options:        Optional[List[str]] = None
-    max_length:     Optional[int] = None
+    placeholder:   Optional[str] = None
+    options:       Optional[List[str]] = None
+    max_length:    Optional[int] = None
+    dynamic_source: Optional[str] = None  # Set to "availableUnits" or "activeCustomers" for live dropdown data
 
     def to_dict(self) -> Dict[str, Any]:
         data = {
@@ -45,6 +46,8 @@ class FieldInfo:
             data['options'] = self.options
         if self.max_length is not None:
             data['max_length'] = self.max_length
+        if self.dynamic_source is not None:
+            data['dynamicSource'] = self.dynamic_source
         return data
 
 
@@ -191,17 +194,20 @@ class RentField(Enum):
     )
     CUSTOMER_ID = FieldInfo(
         'customerID', 'Customer ID',
-        type=FieldType.INT,
-        required=True,
-        is_foreign_key=True,
-        placeholder='e.g. 1',
+        type = FieldType.INT,
+        required = True,
+        is_foreign_key = True,
+        placeholder = 'e.g. 1',
+        dynamic_source = 'activeCustomers'  # Dropdown shows only Active customers
     )
-    UNIT_ID = FieldInfo(
-        'unitID', 'Unit ID',
-        type=FieldType.INT,
-        required=True,
-        is_foreign_key=True,
-        placeholder='e.g. 1',
+    UNIT_PLATE_NUMBER = FieldInfo(
+        'unitPlateNumber', 'Unit Plate Number',
+        type = FieldType.TEXT,
+        required = True,
+        is_foreign_key = True,
+        placeholder = 'e.g. ABC-1234', 
+        max_length = 15,
+        dynamic_source = 'availableUnits'   # Dropdown shows only Available units
     )
     RENT_STATUS = FieldInfo(
         'rentStatus', 'Status',

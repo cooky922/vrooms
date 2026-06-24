@@ -10,13 +10,36 @@ ColumnLayout {
     property var options: []
     property var value: ""
     property bool isViewOnly: false
-    property string errorText: ""
 
+    property string dynamicOptionsSource: ""
+    
     signal inputValueChanged(string key, var val)
 
     Layout.fillWidth: true
     spacing: 6
     z: 5
+
+    property var resolvedOptions: {
+        if (root.dynamicOptionsSource === "availableUnits") {
+            return appDynamicOptions.getAvailableUnits()
+        } else if (root.dynamicOptionsSource === "activeCustomers") {
+            return appDynamicOptions.getActiveCustomers()
+        }
+        return root.options
+    }
+
+    // NEW: maps a stored ID (e.g. "1") back to its display label (e.g. "1 – Juan Dela Cruz")
+    // Only applies to activeCustomers; everything else passes through unchanged.
+    function _labelForValue(val) {
+        if (root.dynamicOptionsSource !== "activeCustomers") return val
+        if (val === undefined || val === "") return val
+        for (let i = 0; i < root.resolvedOptions.length; i++) {
+            if (root.resolvedOptions[i].split(" – ")[0] === String(val)) {
+                return root.resolvedOptions[i]
+            }
+        }
+        return val  // fallback: e.g. customer no longer Active, ID not in current list
+    }
 
     Text {
         text: root.label + (root.isRequired ? " <font color='#E53935'>*</font>" : "")
@@ -33,17 +56,23 @@ ColumnLayout {
             id: dropdown
             visible: !root.isViewOnly
             anchors.fill: parent
-            menuWidth: dropdown.width
+            menuWidth: dropdown.width 
             isSmall: true
             label: "Select " + root.label
             fontName: appTheme.rethinkSansFontName
-            model: root.options
-            selectedValue: root.value !== undefined ? root.value : ""
-            borderColor: root.errorText !== "" ? "#E53935" : "transparent"
+            model: root.resolvedOptions   // CHANGED: was root.options
+            selectedValue: root._labelForValue(root.value !== undefined ? root.value : "")  // CHANGED: maps ID -> label for display
 
             onSelectedValueChanged: {
-                if (!root.isViewOnly && root.value !== selectedValue) {
-                    root.inputValueChanged(root.fieldKey, selectedValue)
+                if (root.isViewOnly) return
+
+                var emitValue = selectedValue
+                if (root.dynamicOptionsSource === "activeCustomers" && selectedValue !== "") {
+                    emitValue = selectedValue.split(" – ")[0]   // CHANGED: strip label back down to plain customerID
+                }
+
+                if (root.value !== emitValue) {
+                    root.inputValueChanged(root.fieldKey, emitValue)
                 }
             }
         }
@@ -54,26 +83,18 @@ ColumnLayout {
             radius: 15
             color: "#EEEEEE"
             border.width: 0
-
+            
             Text {
                 anchors.fill: parent
                 anchors.leftMargin: 12
                 anchors.rightMargin: 12
                 verticalAlignment: Text.AlignVCenter
-                text: (root.value !== undefined && root.value !== "") ? root.value : "-"
+                
+                text: root._labelForValue((root.value !== undefined && root.value !== "") ? root.value : "-")  // CHANGED: also show resolved label in view-only mode
                 font { pixelSize: 12; family: appTheme.rethinkSansFontName }
                 color: "#666666"
                 elide: Text.ElideRight
             }
         }
-    }
-
-    Text {
-        visible: root.errorText !== ""
-        text: root.errorText
-        color: "#E53935"
-        font { pixelSize: 11; family: appTheme.rethinkSansFontName }
-        wrapMode: Text.WordWrap
-        Layout.fillWidth: true
     }
 }
