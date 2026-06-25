@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS rents (
     rentID INTEGER PRIMARY KEY AUTOINCREMENT,
     customerID INTEGER NOT NULL,
     unitID INTEGER NOT NULL,
-    rentStatus TEXT NOT NULL CHECK(rentStatus IN ('Cancelled', 'Active', 'Returned with Liabilities', 'Completed')),
+    rentStatus TEXT NOT NULL CHECK(rentStatus IN ('Cancelled', 'Ongoing', 'Flagged', 'Closed')),
     rentDateTime TEXT NOT NULL,
     expectedReturnDate TEXT NOT NULL,
     actualReturnDateTime TEXT DEFAULT NULL,

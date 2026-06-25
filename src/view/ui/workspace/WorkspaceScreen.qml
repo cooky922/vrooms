@@ -138,6 +138,12 @@ Item {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         onLogoutClicked: stack.pop()
+
+                        onNavigateRequested: function(viewName) {
+                            let name = appUtils.renameEntityName(viewName)
+                            appDataViewController.reselectEntity(name)
+                            workspaceScreen.currentView = viewName 
+                        }
                     }
 
                     // >> data view (for units, customers, rents, payments, liabilities)

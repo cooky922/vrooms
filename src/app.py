@@ -10,7 +10,7 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtQml import QQmlApplicationEngine
 from PyQt6.QtWidgets import QApplication
 
-from src.controller import QMLDataViewController
+from src.controller import QMLDataViewController, QMLDashboardController
 from src.database import SQLDatabase
 from src.model import (
     get_entity_schema_map,
@@ -59,6 +59,8 @@ class App(QApplication):
         self.appUtils = QMLUtils(self)
         self.appDataTableModel = DataTableModel(self)
         self.appDataViewController = QMLDataViewController(self.appDataTableModel, self)
+        self.appDashboardController = QMLDashboardController(self)
+        self.appDashboardController.refreshData()
         self.appEntitySchemaMap = get_entity_schema_map()
 
         # Prepare QML context properties and load file
@@ -67,6 +69,7 @@ class App(QApplication):
         context.setContextProperty('appUtils', self.appUtils)
         context.setContextProperty('appDataTableModel', self.appDataTableModel)
         context.setContextProperty('appDataViewController', self.appDataViewController)
+        context.setContextProperty('appDashboardController', self.appDashboardController)
         context.setContextProperty('appEntitySchemaMap', self.appEntitySchemaMap)
         self.engine.load(QUrl.fromLocalFile(App.app_qml_file_path))
 
@@ -105,7 +108,7 @@ class App(QApplication):
 
         # 1. GENERATE 25 UNITS WITH VARIED STATUSES
         for i in range(25):
-            plate = f"ABC-{100 + i}"
+            plate = f"ABC{100 + i}"
             model_str = f"{random.choice(makes)} {random.choice(series)} {random.choice(bodies)} - 202{random.randint(0, 4)}"
             
             # Organic Status Distribution
@@ -171,7 +174,7 @@ class App(QApplication):
                 RentRepository.add_record({
                     "customerID": c_id,
                     "unitID": u_id, # Updated key
-                    "rentStatus": "Active", # Updated from rentalStatus
+                    "rentStatus": "Ongoing", # Updated from rentalStatus
                     "rentDateTime": rental_time, # Updated from rentalDateTime
                     "expectedReturnDate": expected_return, # Updated from expectedReturnDateTime
                     "rentBaseCost": base_cost, # Updated from rentalBaseCost
@@ -188,7 +191,7 @@ class App(QApplication):
                 rent_id_counter += 1
                 
             elif u_status in ['Available', 'Maintenance']:
-                past_status = random.choice(['Completed', 'Completed', 'Cancelled', 'Returned with Liabilities'])
+                past_status = random.choice(['Closed', 'Ongoing', 'Cancelled', 'Flagged'])
                 
                 actual_return = (rental_start_date + timedelta(days=random.randint(1, 3))).strftime("%Y-%m-%d %H:%M:%S")
                 expected_return = (rental_start_date + timedelta(days=random.randint(2, 4))).strftime("%Y-%m-%d %H:%M:%S")
@@ -212,7 +215,7 @@ class App(QApplication):
                     })
                     
                 # Simulate a Liability scenario
-                if past_status == 'Returned with Liabilities':
+                if past_status == 'Flagged':
                     lia_fee = float(random.randint(500, 5000))
                     lia_status = random.choice(['Active', 'Cleared'])
                     
