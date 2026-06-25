@@ -2,7 +2,7 @@ import ctypes
 import os
 import sys
 import random
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from pathlib import Path
 from PyQt6.QtCore import QUrl
@@ -23,6 +23,7 @@ from src.model import (
 )
 from src.view.theme import FontLoader, QMLAppTheme
 from src.utils import QMLUtils
+from src.controller.dynamic_options import QMLDynamicOptions  # Dynamic dropdown options for QML
 
 class App(QApplication):
     windows_app_id = 'ccc151.vrooms.desktop_app.0_1'
@@ -30,9 +31,9 @@ class App(QApplication):
     app_icon_file_path = str(Path(__file__).parent.parent / 'assets' / 'icons' / 'app-logo.svg')
 
     def __init__(self):
-        # Load Database First
+        # TODO: Load Database First
         SQLDatabase.initialize()
-        # App.seedData()
+        #App.seedData()
 
         super().__init__([])
 
@@ -62,6 +63,7 @@ class App(QApplication):
         self.appDashboardController = QMLDashboardController(self)
         self.appDashboardController.refreshData()
         self.appEntitySchemaMap = get_entity_schema_map()
+        self.appDynamicOptions = QMLDynamicOptions(self)  # Provides live dropdown data to QML
 
         # Prepare QML context properties and load file
         context = self.engine.rootContext()
@@ -71,6 +73,7 @@ class App(QApplication):
         context.setContextProperty('appDataViewController', self.appDataViewController)
         context.setContextProperty('appDashboardController', self.appDashboardController)
         context.setContextProperty('appEntitySchemaMap', self.appEntitySchemaMap)
+        context.setContextProperty('appDynamicOptions', self.appDynamicOptions)  # Expose to QML
         self.engine.load(QUrl.fromLocalFile(App.app_qml_file_path))
 
         # Return early if invalid (ex: QML errors)
@@ -83,14 +86,6 @@ class App(QApplication):
 
     def exitApp(self, return_code : int):
         sys.exit(return_code)
-
-    @staticmethod
-    def warningHandler(warnings):
-        for w in warnings:
-            print(f'File: {w.url().toString()}')
-            print(f'Line: {w.line()}, Column: {w.column()}')
-            print(f'Error: {w.description()}')
-        print('--------------------------\n')
 
     @staticmethod
     def seedData():
