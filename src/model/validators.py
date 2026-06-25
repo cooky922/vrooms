@@ -5,6 +5,7 @@ from .fields import *
 
 PLATE_NUMBER_PATTERN      = re.compile(r'^(?=.*[A-Z])(?=.*[0-9])[A-Z0-9]{6}$')
 DRIVER_LICENSE_ID_PATTERN = re.compile(r'^[A-Z]\d{2}-\d{2}-\d{6}$')
+PHONE_NUMBER_PATTERN      = re.compile(r'^09\d{9}$')
 
 def _require_nonempty(value, field_info):
     if field_info.required and (value is None or str(value).strip() == ''):
@@ -22,6 +23,8 @@ def validate_customer_field(field: CustomerField, value):
     _max_length(value, info)
     if field == CustomerField.CUSTOMER_STATUS and value not in CUSTOMER_STATUS_OPTIONS:
         raise ValidationError(f'Customer Status must be one of: {", ".join(CUSTOMER_STATUS_OPTIONS)}.')
+    if field == CustomerField.PHONE_NUMBER and value and not PHONE_NUMBER_PATTERN.match(str(value)):
+        raise ValidationError('Phone Number must follow the format: 09XXXXXXXXX (11 digits, starting with 09).')
     if field == CustomerField.DRIVER_LICENSE_ID and value and not DRIVER_LICENSE_ID_PATTERN.match(str(value)):
         raise ValidationError('Driver License ID must follow the format: C10-17-123456 (letter, 2 digits, 2 digits, 6 digits).')
 
