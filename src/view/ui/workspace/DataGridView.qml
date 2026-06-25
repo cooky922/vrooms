@@ -99,7 +99,7 @@ Item {
 
                             Components.ContextMenu {
                                 id: rowMenu
-                                x: parent.width - width + 6
+                                x: parent.width - rowMenu.width + 6
                                 smartPositioning: true
 
                                 Components.ContextMenuItem {

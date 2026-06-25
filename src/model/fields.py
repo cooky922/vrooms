@@ -47,7 +47,7 @@ class FieldInfo:
         if self.max_length is not None:
             data['max_length'] = self.max_length
         if self.dynamic_source is not None:
-            data['dynamicSource'] = self.dynamic_source
+            data['dynamic_source'] = self.dynamic_source
         return data
 
 
@@ -200,12 +200,12 @@ class RentField(Enum):
         placeholder = 'e.g. 1',
         dynamic_source = 'activeCustomers'  # Dropdown shows only Active customers
     )
-    UNIT_PLATE_NUMBER = FieldInfo(
-        'unitPlateNumber', 'Unit Plate Number',
-        type = FieldType.TEXT,
+    UNIT_ID = FieldInfo(
+        'unitID', 'Unit ID',
+        type = FieldType.INT,
         required = True,
         is_foreign_key = True,
-        placeholder = 'e.g. ABC-1234', 
+        placeholder = 'e.g. 1', 
         max_length = 15,
         dynamic_source = 'availableUnits'   # Dropdown shows only Available units
     )

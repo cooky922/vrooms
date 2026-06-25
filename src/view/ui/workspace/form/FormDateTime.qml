@@ -10,6 +10,7 @@ ColumnLayout {
     property var value: ""
     property string placeholderText: "YYYY-MM-DD HH:MM:SS"
     property bool isViewOnly: false
+    property string errorText: ""
     
     signal inputValueChanged(string key, var val)
 
@@ -523,7 +524,8 @@ ColumnLayout {
                     }
                     Text {
                         Layout.alignment: Qt.AlignHCenter; text: "hour"
-                        font { pixelSize: 10; family: appTheme.rethinkSansFontName }; color: "#999"
+                        font { pixelSize: 10; family: appTheme.rethinkSansFontName }
+                        color: "#999"
                     }
                     Rectangle {
                         Layout.alignment: Qt.AlignHCenter
@@ -539,7 +541,11 @@ ColumnLayout {
                     }
                 }
 
-                Text { text: ":"; font { pixelSize: 20; bold: true }; color: "#CCCCCC"; Layout.alignment: Qt.AlignVCenter; bottomPadding: 20 }
+                Text { 
+                    text: ":"
+                    font { pixelSize: 20; bold: true }
+                    color: "#CCCCCC"; Layout.alignment: Qt.AlignVCenter; bottomPadding: 20 
+                }
 
                 // Minute
                 ColumnLayout {
@@ -564,7 +570,8 @@ ColumnLayout {
                     }
                     Text {
                         Layout.alignment: Qt.AlignHCenter; text: "min"
-                        font { pixelSize: 10; family: appTheme.rethinkSansFontName }; color: "#999"
+                        font { pixelSize: 10; family: appTheme.rethinkSansFontName }
+                        color: "#999"
                     }
                     Rectangle {
                         Layout.alignment: Qt.AlignHCenter
@@ -580,7 +587,11 @@ ColumnLayout {
                     }
                 }
 
-                Text { text: ":"; font { pixelSize: 20; bold: true }; color: "#CCCCCC"; Layout.alignment: Qt.AlignVCenter; bottomPadding: 20 }
+                Text { 
+                    text: ":"
+                    font { pixelSize: 20; bold: true }
+                    color: "#CCCCCC"; Layout.alignment: Qt.AlignVCenter; bottomPadding: 20 
+                }
 
                 // Second
                 ColumnLayout {
@@ -605,7 +616,8 @@ ColumnLayout {
                     }
                     Text {
                         Layout.alignment: Qt.AlignHCenter; text: "sec"
-                        font { pixelSize: 10; family: appTheme.rethinkSansFontName }; color: "#999"
+                        font { pixelSize: 10; family: appTheme.rethinkSansFontName }
+                        color: "#999"
                     }
                     Rectangle {
                         Layout.alignment: Qt.AlignHCenter

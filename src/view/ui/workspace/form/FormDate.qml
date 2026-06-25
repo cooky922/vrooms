@@ -10,6 +10,7 @@ ColumnLayout {
     property var value: ""
     property string placeholderText: "YYYY-MM-DD"
     property bool isViewOnly: false
+    property string errorText: ""
     
     signal inputValueChanged(string key, var val)
 

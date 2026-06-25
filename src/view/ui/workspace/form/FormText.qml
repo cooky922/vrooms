@@ -71,8 +71,6 @@ ColumnLayout {
                 opacity: 1.0
             }
 
-            // HoverHandler { id: clearHover; cursorShape: Qt.PointingHandCursor }
-
             MouseArea {
                 id: clearMouseArea
                 anchors.fill: parent

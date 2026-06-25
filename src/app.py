@@ -2,7 +2,7 @@ import ctypes
 import os
 import sys
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from pathlib import Path
 from PyQt6.QtCore import QUrl
@@ -33,7 +33,7 @@ class App(QApplication):
     def __init__(self):
         # TODO: Load Database First
         SQLDatabase.initialize()
-        #App.seedData()
+        # App.seedData()
 
         super().__init__([])
 
@@ -86,6 +86,14 @@ class App(QApplication):
 
     def exitApp(self, return_code : int):
         sys.exit(return_code)
+
+    @staticmethod
+    def warningHandler(warnings):
+        for w in warnings:
+            print(f'File: {w.url().toString()}')
+            print(f'Line: {w.line()}, Column: {w.column()}')
+            print(f'Error: {w.description()}')
+        print('--------------------------\n')
 
     @staticmethod
     def seedData():

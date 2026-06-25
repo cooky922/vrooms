@@ -39,7 +39,7 @@ ColumnLayout {
             fontName: appTheme.rethinkSansFontName
             model: root.options
             selectedValue: root.value !== undefined ? root.value : ""
-            borderColor: root.errorText !== "" ? "#E53935" : "transparent"
+            borderColor: root.errorText !== "" ? "#E53935" : "#888888"
 
             onSelectedValueChanged: {
                 if (!root.isViewOnly && root.value !== selectedValue) {
