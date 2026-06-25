@@ -4,7 +4,7 @@ from typing import Optional, List, Dict, Any
 
 UNIT_STATUS_OPTIONS      = ['Available', 'Rented', 'Maintenance']
 CUSTOMER_STATUS_OPTIONS  = ['Active', 'Suspended', 'Blacklisted']
-RENTAL_STATUS_OPTIONS    = ['Cancelled', 'Active', 'Returned with Liabilities', 'Completed']
+RENTAL_STATUS_OPTIONS    = ['Cancelled', 'Ongoing', 'Flagged', 'Closed']
 PAYMENT_TYPE_OPTIONS     = ['Base Fee', 'Liability Fee']
 LIABILITY_TYPE_OPTIONS   = ['Overdue', 'Damage', 'Equipment Loss', 'Other']
 LIABILITY_STATUS_OPTIONS = ['Active', 'Cleared']
@@ -53,7 +53,7 @@ class FieldInfo:
 
 class UnitField(Enum):
     UNIT_ID = FieldInfo(
-        'unitID', 'Unit ID',
+        'unitID', 'ID',
         type=FieldType.INT,
         required=True,
         is_primary_key=True,
@@ -342,7 +342,6 @@ class LiabilityField(Enum):
     @staticmethod
     def get_fields() -> dict[str, FieldInfo]:
         return {field.value.internal_name: field.value for field in LiabilityField}
-
 
 def get_entity_schema_map():
     return {

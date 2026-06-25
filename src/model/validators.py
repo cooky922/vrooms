@@ -1,5 +1,10 @@
+import re
+
 from .errors import ValidationError
 from .fields import *
+
+PLATE_NUMBER_PATTERN      = re.compile(r'^(?=.*[A-Z])(?=.*[0-9])[A-Z0-9]{6}$')
+DRIVER_LICENSE_ID_PATTERN = re.compile(r'^[A-Z]\d{2}-\d{2}-\d{6}$')
 
 def _require_nonempty(value, field_info):
     if field_info.required and (value is None or str(value).strip() == ''):
@@ -17,6 +22,8 @@ def validate_customer_field(field: CustomerField, value):
     _max_length(value, info)
     if field == CustomerField.CUSTOMER_STATUS and value not in CUSTOMER_STATUS_OPTIONS:
         raise ValidationError(f'Customer Status must be one of: {", ".join(CUSTOMER_STATUS_OPTIONS)}.')
+    if field == CustomerField.DRIVER_LICENSE_ID and value and not DRIVER_LICENSE_ID_PATTERN.match(str(value)):
+        raise ValidationError('Driver License ID must follow the format: C10-17-123456 (letter, 2 digits, 2 digits, 6 digits).')
 
 def validate_unit_field(field: UnitField, value):
     info = field.value
@@ -24,6 +31,8 @@ def validate_unit_field(field: UnitField, value):
     _max_length(value, info)
     if field == UnitField.UNIT_STATUS and value not in UNIT_STATUS_OPTIONS:
         raise ValidationError(f'Unit Status must be one of: {", ".join(UNIT_STATUS_OPTIONS)}.')
+    if field == UnitField.PLATE_NUMBER and value and not PLATE_NUMBER_PATTERN.match(str(value)):
+        raise ValidationError('Plate Number must be 6 characters, a mix of uppercase letters and numbers (e.g. 123ABC or A12B34).')
     if field == UnitField.DAILY_RATE:
         try:
             if float(value) < 0:

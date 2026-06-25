@@ -295,9 +295,12 @@ class QMLDataViewController(QObject):
                 continue
 
             if primary_key and col == primary_key:
+                if mode == 'edit':
+                    if str(current_data.get(primary_key)) != str(initial_data.get(primary_key)):
+                        errors[col] = f'{entity_model.from_internal_name(primary_key).value.display_name} cannot be changed.'
+                        is_valid    = False
+                    continue
                 try:
-                    if mode == 'edit' and current_data.get(primary_key) == initial_data.get(primary_key):
-                        continue
                     repo.check_duplicate_key(val, parent_id=parent_id)
                 except DatabaseError as e:
                     errors[col] = e.message
