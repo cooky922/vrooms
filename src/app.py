@@ -33,7 +33,7 @@ class App(QApplication):
     def __init__(self):
         # TODO: Load Database First
         SQLDatabase.initialize()
-        # App.seedData()
+        #App.seedData()
 
         super().__init__([])
 

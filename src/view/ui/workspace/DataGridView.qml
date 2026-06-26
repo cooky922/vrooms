@@ -61,17 +61,49 @@ Item {
                         clip: true
 
                         Image {
-                            anchors.centerIn: parent
+                            id: cardImage
+                            anchors.fill: parent
+                            fillMode: Image.PreserveAspectCrop
+
                             source: {
+                                let row = appDataTableModel.getRowData(index)
                                 let e = root.entityName.toLowerCase()
+                                let picPath = ""
+
+                                if (e.indexOf("unit") >= 0)
+                                    picPath = row["unitPicture"] || ""
+                                else if (e.indexOf("customer") >= 0)
+                                    picPath = row["profilePicture"] || ""
+
+                                if (picPath !== "")
+                                    return "file:///" + picPath.replace(/\\/g, "/")
+
+                                // fallback icon
                                 if (e.indexOf("unit") >= 0) return "../../../../assets/icons/unit.svg"
                                 if (e.indexOf("customer") >= 0) return "../../../../assets/icons/customer.svg"
                                 if (e.indexOf("rent") >= 0) return "../../../../assets/icons/rent.svg"
                                 if (e.indexOf("payment") >= 0) return "../../../../assets/icons/payment.svg"
                                 return "../../../../assets/icons/liability.svg"
                             }
-                            sourceSize: Qt.size(40, 40)
-                            opacity: 0.2
+
+                            sourceSize: {
+                                let row = appDataTableModel.getRowData(index)
+                                let e = root.entityName.toLowerCase()
+                                let hasPic = (e.indexOf("unit") >= 0 && row["unitPicture"]) ||
+                                             (e.indexOf("customer") >= 0 && row["profilePicture"])
+                                return hasPic ? Qt.size(imageFrame.width, imageFrame.height) : Qt.size(40, 40)
+                            }
+
+                            anchors.centerIn: hasPicture ? undefined : parent
+
+                            property bool hasPicture: {
+                                let row = appDataTableModel.getRowData(index)
+                                let e = root.entityName.toLowerCase()
+                                return (e.indexOf("unit") >= 0 && row["unitPicture"] && row["unitPicture"] !== "") ||
+                                       (e.indexOf("customer") >= 0 && row["profilePicture"] && row["profilePicture"] !== "")
+                            }
+
+                            opacity: hasPicture ? 1.0 : 0.2
                         }
 
                         Rectangle {
@@ -127,14 +159,14 @@ Item {
                                 let row = appDataTableModel.getRowData(index)
                                 let e = root.entityName.toLowerCase()
                                 if (e.indexOf("unit") >= 0)
-                                    return row["unitModel"] || "Unknown Model"
+                                    return (row["unitBrand"] || "") + " " + (row["unitModel"] || "") || "Unknown Model"
                                 if (e.indexOf("customer") >= 0)
                                     return ((row["firstName"] || "") + " " + (row["lastName"] || "")).trim() || "Unknown"
                                 if (e.indexOf("rent") >= 0)
-                                    return "Rental #" + (row["rentalID"] || index + 1)
+                                    return "Rental #" + (row["rentID"] || index + 1)
                                 if (e.indexOf("payment") >= 0)
                                     return "Payment #" + (row["paymentID"] || index + 1)
-                                return row["liabilityType"] || "Liability"
+                                return row["liabilityDescription"] || "Liability"
                             }
                             font.family: appTheme.rethinkSansFontName
                             font.pixelSize: 12
@@ -155,9 +187,9 @@ Item {
                                 if (e.indexOf("customer") >= 0)
                                     return row["driverLicenseID"] || ""
                                 if (e.indexOf("rent") >= 0)
-                                    return "Unit: " + (row["unitPlateNumber"] || "—")
+                                    return "Unit ID: " + (row["unitID"] || "—")
                                 if (e.indexOf("payment") >= 0)
-                                    return "Rental #" + (row["rentalID"] || "—")
+                                    return "Customer #" + (row["customerID"] || "—")
                                 return "Fee: ₱" + (row["liabilityFee"] || "0")
                             }
                             font.family: appTheme.rethinkSansFontName
@@ -175,7 +207,7 @@ Item {
                                 if (e.indexOf("rent") >= 0)
                                     return "Customer ID: " + (row["customerID"] || "—")
                                 if (e.indexOf("payment") >= 0)
-                                    return "₱" + (row["amountPaid"] || "0") + " · " + (row["paymentType"] || "—")
+                                    return "₱" + (row["paidAmount"] || "0")
                                 return ""
                             }
                             font.family: appTheme.rethinkSansFontName
@@ -202,7 +234,7 @@ Item {
                                     if (e.indexOf("unit") >= 0)
                                         return "₱" + (row["dailyRate"] || "0") + "/day"
                                     if (e.indexOf("rent") >= 0)
-                                        return row["rentalDateTime"] || ""
+                                        return row["rentDateTime"] || ""
                                     if (e.indexOf("payment") >= 0)
                                         return row["paymentDateTime"] || ""
                                     return ""
@@ -221,10 +253,10 @@ Item {
                                 radius: 9
                                 color: {
                                     let row = appDataTableModel.getRowData(index)
-                                    let s = row["unitStatus"] || row["customerStatus"] || row["rentalStatus"] || row["liabilityStatus"] || ""
+                                    let s = row["unitStatus"] || row["customerStatus"] || row["rentStatus"] || row["liabilityStatus"] || ""
                                     if (s === "Available" || s === "Active" || s === "Paid" || s === "Completed") return "#D1FAE5"
                                     if (s === "Rented" || s === "Inactive" || s === "Overdue" || s === "Unpaid") return "#FEE2E2"
-                                    if (s === "Pending") return "#FEF3C7"
+                                    if (s === "Pending" || s === "Ongoing") return "#FEF3C7"
                                     return "#F3F4F6"
                                 }
 
@@ -233,16 +265,16 @@ Item {
                                     anchors.centerIn: parent
                                     text: {
                                         let row = appDataTableModel.getRowData(index)
-                                        return row["unitStatus"] || row["customerStatus"] || row["rentalStatus"] || row["liabilityStatus"] || "—"
+                                        return row["unitStatus"] || row["customerStatus"] || row["rentStatus"] || row["liabilityStatus"] || "—"
                                     }
                                     font.family: appTheme.rethinkSansFontName
                                     font.pixelSize: 10
                                     color: {
                                         let row = appDataTableModel.getRowData(index)
-                                        let s = row["unitStatus"] || row["customerStatus"] || row["rentalStatus"] || row["liabilityStatus"] || ""
+                                        let s = row["unitStatus"] || row["customerStatus"] || row["rentStatus"] || row["liabilityStatus"] || ""
                                         if (s === "Available" || s === "Active" || s === "Paid" || s === "Completed") return "#065F46"
                                         if (s === "Rented" || s === "Inactive" || s === "Overdue" || s === "Unpaid") return "#991B1B"
-                                        if (s === "Pending") return "#92400E"
+                                        if (s === "Pending" || s === "Ongoing") return "#92400E"
                                         return "#6B7280"
                                     }
                                 }
