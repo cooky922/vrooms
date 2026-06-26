@@ -28,7 +28,7 @@ ColumnLayout {
         id: field
         Layout.fillWidth: true
         Layout.preferredHeight: 30
-        placeholderText: root.isViewOnly ? "-" : root.placeholderText
+        placeholderText: root.isViewOnly ? "N/A" : root.placeholderText
         leftPadding: 12; rightPadding: 32
         font { pixelSize: 12; family: appTheme.rethinkSansFontName }
 
