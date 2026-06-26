@@ -3,7 +3,6 @@ from src.database import SQLDatabase
 from src.model.repositories import (
     UnitRepository,
     CustomerRepository,
-    CustomerEligibility,
 )
 
 
@@ -70,7 +69,7 @@ class QMLDynamicOptions(QObject):
             records = CustomerRepository.get_records()
             result = []
             for r in records:
-                ok, _ = CustomerEligibility.check(r['customerID'])
+                ok, _ = CustomerRepository.check_eligibility(r['customerID'])
                 if ok:
                     result.append(
                         f"{r['customerID']} \u2013 {r['firstName']} {r['lastName']}"
