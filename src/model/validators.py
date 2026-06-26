@@ -47,27 +47,25 @@ def validate_rent_field(field: RentField, value):
     info = field.value
     _require_nonempty(value, info)
     _max_length(value, info)
-    if field == RentField.RENT_STATUS and value not in RENTAL_STATUS_OPTIONS:
-        raise ValidationError(f'Rent Status must be one of: {", ".join(RENTAL_STATUS_OPTIONS)}.')
-    if field == RentField.RENT_BASE_COST:
+    if field == RentField.RENT_STATUS and value not in RENT_STATUS_OPTIONS:
+        raise ValidationError(f'Rent Status must be one of: {", ".join(RENT_STATUS_OPTIONS)}.')
+    if field == RentField.RENT_FEE:
         try:
             if float(value) < 0:
-                raise ValidationError('Rent Base Cost must be a non-negative number.')
+                raise ValidationError('Rent Fee must be a non-negative number.')
         except (TypeError, ValueError):
-            raise ValidationError('Rent Base Cost must be a valid number.')
+            raise ValidationError('Rent Fee must be a valid number.')
 
 def validate_payment_field(field: PaymentField, value):
     info = field.value
     _require_nonempty(value, info)
     _max_length(value, info)
-    if field == PaymentField.PAYMENT_TYPE and value not in PAYMENT_TYPE_OPTIONS:
-        raise ValidationError(f'Payment Type must be one of: {", ".join(PAYMENT_TYPE_OPTIONS)}.')
-    if field == PaymentField.AMOUNT_PAID:
+    if field == PaymentField.PAID_AMOUNT:
         try:
             if float(value) < 0:
-                raise ValidationError('Amount Paid must be a non-negative number.')
+                raise ValidationError('Paid amount must be a non-negative number.')
         except (TypeError, ValueError):
-            raise ValidationError('Amount Paid must be a valid number.')
+            raise ValidationError('Paid amount must be a valid number.')
 
 def validate_liability_field(field: LiabilityField, value):
     info = field.value
@@ -75,8 +73,6 @@ def validate_liability_field(field: LiabilityField, value):
     _max_length(value, info)
     if field == LiabilityField.LIABILITY_STATUS and value not in LIABILITY_STATUS_OPTIONS:
         raise ValidationError(f'Liability Status must be one of: {", ".join(LIABILITY_STATUS_OPTIONS)}.')
-    if field == LiabilityField.LIABILITY_TYPE and value not in LIABILITY_TYPE_OPTIONS:
-        raise ValidationError(f'Liability Type must be one of: {", ".join(LIABILITY_TYPE_OPTIONS)}.')
     if field == LiabilityField.LIABILITY_FEE:
         try:
             if float(value) < 0:

@@ -3,11 +3,9 @@ from enum import Enum
 from typing import Optional, List, Dict, Any
 
 UNIT_STATUS_OPTIONS      = ['Available', 'Rented', 'Maintenance']
-CUSTOMER_STATUS_OPTIONS  = ['Active', 'Suspended', 'Blacklisted']
-RENTAL_STATUS_OPTIONS    = ['Cancelled', 'Ongoing', 'Flagged', 'Closed']
-PAYMENT_TYPE_OPTIONS     = ['Base Fee', 'Liability Fee']
-LIABILITY_TYPE_OPTIONS   = ['Overdue', 'Damage', 'Equipment Loss', 'Other']
-LIABILITY_STATUS_OPTIONS = ['Active', 'Cleared']
+CUSTOMER_STATUS_OPTIONS  = ['Active', 'Blacklisted']
+RENT_STATUS_OPTIONS      = ['Ongoing', 'Closed']
+LIABILITY_STATUS_OPTIONS = ['Pending', 'Settled']
 
 class FieldType(Enum):
     TEXT     = 'text'
@@ -66,12 +64,38 @@ class UnitField(Enum):
         placeholder='e.g. ABC-1234',
         max_length=15,
     )
+    UNIT_BRAND = FieldInfo(
+        'unitBrand', 'Brand',
+        type=FieldType.TEXT,
+        required=True,
+        placeholder='e.g. Toyota',
+        max_length=30,
+    )
     UNIT_MODEL = FieldInfo(
         'unitModel', 'Model',
         type=FieldType.TEXT,
         required=True,
-        placeholder='e.g. Toyota Camry',
+        placeholder='e.g. Camry',
         max_length=50,
+    )
+    UNIT_COLOR = FieldInfo(
+        'unitColor', 'Color',
+        type=FieldType.TEXT,
+        required=True,
+        placeholder='e.g. Red',
+        max_length=30,
+    )
+    UNIT_YEAR = FieldInfo(
+        'unitYear', 'Year',
+        type=FieldType.INT,
+        required=True,
+        placeholder='e.g. 2024',
+    )
+    UNIT_PICTURE = FieldInfo(
+        'unitPicture', 'Picture',
+        type=FieldType.FILE,
+        required=False,
+        max_length=255,
     )
     UNIT_STATUS = FieldInfo(
         'unitStatus', 'Status',
@@ -85,14 +109,8 @@ class UnitField(Enum):
         required=True,
         placeholder='e.g. 300.0',
     )
-    UNIT_PICTURE = FieldInfo(
-        'unitPicture', 'Picture',
-        type=FieldType.FILE,
-        required=False,
-        max_length=255,
-    )
-    REGISTRATION_DATE = FieldInfo(
-        'registrationDate', 'Start Date',
+    DATE_ADDED = FieldInfo(
+        'dateAdded', 'Date Added',
         type=FieldType.DATE,
         required=True,
         placeholder='YYYY-MM-DD',
@@ -132,12 +150,6 @@ class CustomerField(Enum):
         placeholder='e.g. Dela Cruz',
         max_length=50,
     )
-    CUSTOMER_STATUS = FieldInfo(
-        'customerStatus', 'Status',
-        type=FieldType.SELECT,
-        required=True,
-        options=CUSTOMER_STATUS_OPTIONS,
-    )
     PHONE_NUMBER = FieldInfo(
         'phoneNumber', 'Phone Number',
         type=FieldType.TEXT,
@@ -145,11 +157,24 @@ class CustomerField(Enum):
         placeholder='e.g. 09123456789',
         max_length=11,
     )
+    EMAIL_ADDRESS = FieldInfo(
+        'emailAddress', 'Email Address',
+        type=FieldType.TEXT,
+        required=True,
+        placeholder='e.g. juan@example.com',
+        max_length=100,
+    )
     HOME_ADDRESS = FieldInfo(
         'homeAddress', 'Home Address',
         type=FieldType.TEXT,
         required=True,
         placeholder='e.g. 123 Main St',
+        max_length=255,
+    )
+    PROFILE_PICTURE = FieldInfo(
+        'profilePicture', 'Profile Picture',
+        type=FieldType.FILE,
+        required=False,
         max_length=255,
     )
     DRIVER_LICENSE_ID = FieldInfo(
@@ -162,11 +187,23 @@ class CustomerField(Enum):
     DRIVER_LICENSE_PICTURE = FieldInfo(
         'driverLicenseIDPicture', 'Driver License Picture',
         type=FieldType.FILE,
-        required=False,
+        required=True,
         max_length=255,
     )
-    REGISTRATION_DATE = FieldInfo(
-        'registrationDate', 'Start Date',
+    DRIVER_LICENSE_EXPIRY_DATE = FieldInfo(
+        'driverLicenseExpiryDate', 'License Expiry Date',
+        type=FieldType.DATE,
+        required=True,
+        placeholder='YYYY-MM-DD',
+    )
+    CUSTOMER_STATUS = FieldInfo(
+        'customerStatus', 'Status',
+        type=FieldType.SELECT,
+        required=True,
+        options=CUSTOMER_STATUS_OPTIONS,
+    )
+    DATE_REGISTERED = FieldInfo(
+        'dateRegistered', 'Date Registered',
         type=FieldType.DATE,
         required=True,
         placeholder='YYYY-MM-DD',
@@ -194,26 +231,25 @@ class RentField(Enum):
     )
     CUSTOMER_ID = FieldInfo(
         'customerID', 'Customer ID',
-        type = FieldType.INT,
-        required = True,
-        is_foreign_key = True,
-        placeholder = 'e.g. 1',
-        dynamic_source = 'activeCustomers'  # Dropdown shows only Active customers
+        type=FieldType.INT,
+        required=True,
+        is_foreign_key=True,
+        placeholder='e.g. 1',
+        dynamic_source='activeCustomers'  # Dropdown shows only Active customers
     )
     UNIT_ID = FieldInfo(
         'unitID', 'Unit ID',
-        type = FieldType.INT,
-        required = True,
-        is_foreign_key = True,
-        placeholder = 'e.g. 1', 
-        max_length = 15,
-        dynamic_source = 'availableUnits'   # Dropdown shows only Available units
+        type=FieldType.INT,
+        required=True,
+        is_foreign_key=True,
+        placeholder='e.g. 1',
+        dynamic_source='availableUnits'   # Dropdown shows only Available units
     )
     RENT_STATUS = FieldInfo(
         'rentStatus', 'Status',
         type=FieldType.SELECT,
         required=True,
-        options=RENTAL_STATUS_OPTIONS,
+        options=RENT_STATUS_OPTIONS,
     )
     RENT_DATETIME = FieldInfo(
         'rentDateTime', 'Rent Date & Time',
@@ -221,11 +257,11 @@ class RentField(Enum):
         required=True,
         placeholder='YYYY-MM-DD HH:MM:SS',
     )
-    EXPECTED_RETURN_DATE = FieldInfo(
-        'expectedReturnDate', 'Expected Return Date',
-        type=FieldType.DATE,
+    EXPECTED_RETURN_DATETIME = FieldInfo(
+        'expectedReturnDateTime', 'Expected Return Date & Time',
+        type=FieldType.DATETIME,
         required=True,
-        placeholder='YYYY-MM-DD',
+        placeholder='YYYY-MM-DD HH:MM:SS',
     )
     ACTUAL_RETURN_DATETIME = FieldInfo(
         'actualReturnDateTime', 'Actual Return Date & Time',
@@ -233,8 +269,8 @@ class RentField(Enum):
         required=False,
         placeholder='YYYY-MM-DD HH:MM:SS',
     )
-    RENT_BASE_COST = FieldInfo(
-        'rentBaseCost', 'Rent Base Cost (₱)',
+    RENT_FEE = FieldInfo(
+        'rentFee', 'Rent Fee (₱)',
         type=FieldType.REAL,
         required=True,
         placeholder='e.g. 1200.0',
@@ -252,6 +288,60 @@ class RentField(Enum):
         return {field.value.internal_name: field.value for field in RentField}
 
 
+class LiabilityField(Enum):
+    LIABILITY_ID = FieldInfo(
+        'liabilityID', 'ID',
+        type=FieldType.INT,
+        required=True,
+        is_primary_key=True,
+        placeholder='e.g. 1',
+    )
+    CUSTOMER_ID = FieldInfo(
+        'customerID', 'Customer ID',
+        type=FieldType.INT,
+        required=True,
+        is_foreign_key=True,
+        placeholder='e.g. 1',
+        dynamic_source='activeCustomers'
+    )
+    LIABILITY_DESCRIPTION = FieldInfo(
+        'liabilityDescription', 'Description',
+        type=FieldType.TEXT,
+        required=True,
+        placeholder='e.g. Broken side mirror',
+        max_length=255,
+    )
+    LIABILITY_FEE = FieldInfo(
+        'liabilityFee', 'Liability Fee (₱)',
+        type=FieldType.REAL,
+        required=True,
+        placeholder='e.g. 500.0',
+    )
+    LIABILITY_STATUS = FieldInfo(
+        'liabilityStatus', 'Status',
+        type=FieldType.SELECT,
+        required=True,
+        options=LIABILITY_STATUS_OPTIONS,
+    )
+    ISSUED_DATETIME = FieldInfo(
+        'issuedDateTime', 'Issued Date & Time',
+        type=FieldType.DATETIME,
+        required=True,
+        placeholder='YYYY-MM-DD HH:MM:SS',
+    )
+
+    @staticmethod
+    def from_internal_name(name: str) -> 'LiabilityField':
+        for field in LiabilityField:
+            if field.value.internal_name == name:
+                return field
+        raise ValueError(f'Unknown field: {name}')
+
+    @staticmethod
+    def get_fields() -> dict[str, FieldInfo]:
+        return {field.value.internal_name: field.value for field in LiabilityField}
+
+
 class PaymentField(Enum):
     PAYMENT_ID = FieldInfo(
         'paymentID', 'ID',
@@ -260,24 +350,26 @@ class PaymentField(Enum):
         is_primary_key=True,
         placeholder='e.g. 1',
     )
-    RENT_ID = FieldInfo(
-        'rentID', 'Rent ID',
+    CUSTOMER_ID = FieldInfo(
+        'customerID', 'Customer ID',
         type=FieldType.INT,
         required=True,
         is_foreign_key=True,
         placeholder='e.g. 1',
+        dynamic_source='activeCustomers'
     )
-    AMOUNT_PAID = FieldInfo(
-        'amountPaid', 'Amount Paid (₱)',
+    LIABILITY_ID = FieldInfo(
+        'liabilityID', 'Liability ID',
+        type=FieldType.INT,
+        required=False,
+        is_foreign_key=True,
+        placeholder='e.g. 1 (Optional)',
+    )
+    PAID_AMOUNT = FieldInfo(
+        'paidAmount', 'Paid Amount (₱)',
         type=FieldType.REAL,
         required=True,
         placeholder='e.g. 300.0',
-    )
-    PAYMENT_TYPE = FieldInfo(
-        'paymentType', 'Payment Type',
-        type=FieldType.SELECT,
-        required=True,
-        options=PAYMENT_TYPE_OPTIONS,
     )
     PAYMENT_DATETIME = FieldInfo(
         'paymentDateTime', 'Payment Date & Time',
@@ -297,57 +389,55 @@ class PaymentField(Enum):
     def get_fields() -> dict[str, FieldInfo]:
         return {field.value.internal_name: field.value for field in PaymentField}
 
-
-class LiabilityField(Enum):
-    LIABILITY_ID = FieldInfo(
-        'liabilityID', 'ID',
-        type=FieldType.INT,
-        required=True,
-        is_primary_key=True,
-        placeholder='e.g. 1',
-    )
-    RENT_ID = FieldInfo(
-        'rentID', 'Rent ID',
-        type=FieldType.INT,
-        required=True,
-        is_foreign_key=True,
-        placeholder='e.g. 1',
-    )
-    LIABILITY_TYPE = FieldInfo(
-        'liabilityType', 'Liability Type',
-        type=FieldType.SELECT,
-        required=True,
-        options=LIABILITY_TYPE_OPTIONS,
-    )
-    LIABILITY_FEE = FieldInfo(
-        'liabilityFee', 'Liability Fee (₱)',
-        type=FieldType.REAL,
-        required=True,
-        placeholder='e.g. 300.0',
-    )
-    LIABILITY_STATUS = FieldInfo(
-        'liabilityStatus', 'Status',
-        type=FieldType.SELECT,
-        required=True,
-        options=LIABILITY_STATUS_OPTIONS,
-    )
-
-    @staticmethod
-    def from_internal_name(name: str) -> 'LiabilityField':
-        for field in LiabilityField:
-            if field.value.internal_name == name:
-                return field
-        raise ValueError(f'Unknown field: {name}')
-
-    @staticmethod
-    def get_fields() -> dict[str, FieldInfo]:
-        return {field.value.internal_name: field.value for field in LiabilityField}
+ENTITY_ENUM_MAP = {
+    'unit':      UnitField,
+    'customer':  CustomerField,
+    'rent':      RentField,
+    'liability': LiabilityField,
+    'payment':   PaymentField,
+}
 
 def get_entity_schema_map():
     return {
-        'unit':      [field.value.to_dict() for field in UnitField],
-        'customer':  [field.value.to_dict() for field in CustomerField],
-        'rent':      [field.value.to_dict() for field in RentField],
-        'payment':   [field.value.to_dict() for field in PaymentField],
-        'liability': [field.value.to_dict() for field in LiabilityField],
+        entity_name: [field.value.to_dict() for field in enum_class]
+        for entity_name, enum_class in ENTITY_ENUM_MAP.items()
     }
+
+def get_filtered_fields(entity_name: Optional[str] = None, return_attr: Optional[str] = None, **filters) -> List[Any]:
+    """
+    Filters FieldInfo objects based on their attributes.
+
+    Args:
+        entity_name (str, optional): 'unit', 'customer', 'rent', 'liability', 'payment'. 
+                                     If None, searches across all entities.
+        return_attr (str, optional): A specific attribute to return (e.g., 'internal_name'). 
+                                     If None, returns the entire FieldInfo object.
+        **filters: Key-value pairs matching FieldInfo attributes (e.g., type=FieldType.FILE).
+
+    Returns:
+        List of matching FieldInfo objects or their specific attributes.
+    """
+    enums_to_search = []
+    if entity_name:
+        if entity_name not in ENTITY_ENUM_MAP:
+            raise ValueError(f'Unknown entity: {entity_name}')
+        enums_to_search.append(ENTITY_ENUM_MAP[entity_name])
+    else:
+        enums_to_search = list(ENTITY_ENUM_MAP.values())
+        
+    results = []
+    for entity_enum in enums_to_search:
+        for field in entity_enum:
+            field_info: FieldInfo = field.value
+            match = True
+            for key, value in filters.items():
+                if not hasattr(field_info, key) or getattr(field_info, key) != value:
+                    match = False
+                    break
+            if match:
+                if return_attr:
+                    results.append(getattr(field_info, return_attr))
+                else:
+                    results.append(field_info)
+                    
+    return results

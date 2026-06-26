@@ -237,7 +237,7 @@ class RentRepository(BaseRepository):
 class PaymentRepository(BaseRepository):
     TABLE      = 'payments'
     PK         = 'paymentID'
-    PARENT_FK  = 'rentID'
+    PARENT_FK  = 'customerID'
     COLUMNS    = [f.value.internal_name for f in PaymentField]
     FIELD_ENUM = PaymentField
 
@@ -253,7 +253,7 @@ class PaymentRepository(BaseRepository):
 class LiabilityRepository(BaseRepository):
     TABLE      = 'liabilities'
     PK         = 'liabilityID'
-    PARENT_FK  = 'rentID'
+    PARENT_FK  = 'customerID'
     COLUMNS    = [f.value.internal_name for f in LiabilityField]
     FIELD_ENUM = LiabilityField
 

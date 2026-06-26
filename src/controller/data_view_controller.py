@@ -3,6 +3,8 @@ from PyQt6.QtCore import QObject, QUrl, pyqtSlot, pyqtProperty, pyqtSignal
 from src.database import Filter, Paged, Sorted, Search, SearchMatchType
 from src.model import (
     EntityKind,
+    FieldInfo,
+    FieldType,
     ValidationError,
     DatabaseError,
     CustomerRepository,
@@ -11,14 +13,13 @@ from src.model import (
     PaymentRepository,
     LiabilityRepository,
     REPOSITORY_MAP,
+    get_filtered_fields
 )
 from src.model.validators import (
     UNIT_STATUS_OPTIONS,
     CUSTOMER_STATUS_OPTIONS,
-    RENTAL_STATUS_OPTIONS,
-    PAYMENT_TYPE_OPTIONS,
-    LIABILITY_STATUS_OPTIONS,
-    LIABILITY_TYPE_OPTIONS,
+    RENT_STATUS_OPTIONS,
+    LIABILITY_STATUS_OPTIONS
 )
 
 
@@ -105,18 +106,17 @@ class QMLDataViewController(QObject):
                 case 'customerStatus':
                     return CUSTOMER_STATUS_OPTIONS
                 case 'rentStatus':
-                    return RENTAL_STATUS_OPTIONS
-                case 'paymentType':
-                    return PAYMENT_TYPE_OPTIONS
+                    return RENT_STATUS_OPTIONS
                 case 'liabilityStatus':
                     return LIABILITY_STATUS_OPTIONS
-                case 'liabilityType':
-                    return LIABILITY_TYPE_OPTIONS
+                # TODO: filter customers
                 case 'customerID' if self.entity_kind == EntityKind.RENT:
                     return CustomerRepository.get_keys()
+                # TODO: filter units
                 case 'unitID' if self.entity_kind == EntityKind.RENT:
                     return UnitRepository.get_keys()
-                case 'rentID' if self.entity_kind in (EntityKind.PAYMENT, EntityKind.LIABILITY):
+                # TODO: filter
+                case 'customerID' if self.entity_kind in (EntityKind.PAYMENT, EntityKind.LIABILITY):
                     return RentRepository.get_keys()
                 case _:
                     return []
@@ -375,16 +375,15 @@ class QMLDataViewController(QObject):
             self.refreshTable()
 
     # ── Internal ──────────────────────────────────────────────────────────────
-
     def normalizeRecord(self, data: dict) -> dict:
         new_data = {}
         repo     = REPOSITORY_MAP[self.entity_kind]
         for k, v in data.items():
-            if k in ('dailyRate', 'rentBaseCost', 'amountPaid', 'liabilityFee'):
+            if k in get_filtered_fields(return_attr = 'internal_name', type = FieldType.REAL):
                 new_data[k] = float(v) if (v is not None and v != '') else None
             elif v is None or v == '':
                 new_data[k] = None
-            elif k in ('unitPicture', 'driverLicenseIDPicture') and isinstance(v, QUrl):
+            elif k in get_filtered_fields(return_attr = 'internal_name', type = FieldType.FILE) and isinstance(v, QUrl):
                 new_data[k] = v.toLocalFile() if v.isLocalFile() else str(v)
             else:
                 new_data[k] = str(v)
