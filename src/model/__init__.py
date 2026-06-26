@@ -17,6 +17,8 @@ from .repositories import (
     RentRepository,
     PaymentRepository,
     LiabilityRepository,
+    CustomerBalance,
+    CustomerEligibility,
     REPOSITORY_MAP
 )
 from .table_model import DataTableModel

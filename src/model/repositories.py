@@ -245,10 +245,6 @@ class PaymentRepository(BaseRepository):
     def validate_field(cls, field: PaymentField, value, _=None):
         validate_payment_field(field, value)
 
-    @classmethod
-    def delete_by_rent(cls, rent_id: str):
-        SQLDatabase.execute(f'DELETE FROM {cls.TABLE} WHERE {cls.PARENT_FK} = ?', (rent_id,))
-
 
 class LiabilityRepository(BaseRepository):
     TABLE      = 'liabilities'
@@ -261,10 +257,6 @@ class LiabilityRepository(BaseRepository):
     def validate_field(cls, field: LiabilityField, value, _=None):
         validate_liability_field(field, value)
 
-    @classmethod
-    def delete_by_rent(cls, rent_id: str):
-        SQLDatabase.execute(f'DELETE FROM {cls.TABLE} WHERE {cls.PARENT_FK} = ?', (rent_id,))
-
 
 REPOSITORY_MAP = {
     EntityKind.UNIT:      UnitRepository,
@@ -273,3 +265,104 @@ REPOSITORY_MAP = {
     EntityKind.PAYMENT:   PaymentRepository,
     EntityKind.LIABILITY: LiabilityRepository,
 }
+
+# ---------------------------------------------------------------------------
+# Business logic helpers — balance & eligibility
+# ---------------------------------------------------------------------------
+
+class CustomerBalance:
+    """
+    Computes the derived balance for a customer at query time.
+
+    balance = rentFee (ongoing rent, if any)
+            + liabilityFee (pending liability, if any)
+            - SUM(paidAmount) (all payments made by the customer)
+
+    A positive balance blocks renting regardless of customerStatus.
+    """
+
+    BALANCE_QUERY = """
+        SELECT
+            COALESCE((
+                SELECT rentFee FROM rents
+                WHERE customerID = :cid AND rentStatus = 'Ongoing'
+                LIMIT 1
+            ), 0.0)
+            +
+            COALESCE((
+                SELECT SUM(liabilityFee) FROM liabilities
+                WHERE customerID = :cid AND liabilityStatus = 'Pending'
+            ), 0.0)
+            -
+            COALESCE((
+                SELECT SUM(paidAmount) FROM payments
+                WHERE customerID = :cid
+            ), 0.0)
+        AS balance
+    """
+
+    @classmethod
+    def get(cls, customer_id: int) -> float:
+        """Returns the current balance for a single customer."""
+        row = SQLDatabase.fetch_one(cls.BALANCE_QUERY, {'cid': customer_id})
+        return round(float(row['balance']), 2) if row else 0.0
+
+    @classmethod
+    def get_bulk(cls, customer_ids: list[int]) -> dict[int, float]:
+        """Returns {customer_id: balance} for a list of customer IDs."""
+        return {cid: cls.get(cid) for cid in customer_ids}
+
+
+class CustomerEligibility:
+    """
+    Checks all three conditions before allowing a new rent:
+      1. customerStatus = 'Active'
+      2. balance = 0
+      3. driverLicenseExpiryDate > today
+      4. No ongoing rental already exists for this customer
+    """
+
+    @classmethod
+    def check(cls, customer_id: int) -> tuple[bool, str]:
+        """
+        Returns (is_eligible, reason).
+        reason is an empty string when eligible.
+        """
+        row = SQLDatabase.fetch_one(
+            """
+            SELECT customerStatus, driverLicenseExpiryDate
+            FROM customers
+            WHERE customerID = ?
+            """,
+            (customer_id,)
+        )
+        if not row:
+            return False, 'Customer not found.'
+
+        if row['customerStatus'] != 'Active':
+            return False, 'Customer is blacklisted.'
+
+        from datetime import date
+        expiry = row['driverLicenseExpiryDate']  # stored as TEXT 'YYYY-MM-DD'
+        if expiry <= date.today().isoformat():
+            return False, 'Driver license has expired.'
+
+        balance = CustomerBalance.get(customer_id)
+        if balance > 0:
+            return False, f'Customer has an outstanding balance of ₱{balance:,.2f}.'
+
+        has_ongoing = SQLDatabase.fetch_scalar(
+            "SELECT COUNT(*) FROM rents WHERE customerID = ? AND rentStatus = 'Ongoing'",
+            (customer_id,)
+        )
+        if has_ongoing:
+            return False, 'Customer already has an ongoing rental.'
+
+        return True, ''
+
+    @classmethod
+    def assert_eligible(cls, customer_id: int) -> None:
+        """Raises DatabaseError with the reason if the customer is ineligible."""
+        ok, reason = cls.check(customer_id)
+        if not ok:
+            raise DatabaseError(reason)
