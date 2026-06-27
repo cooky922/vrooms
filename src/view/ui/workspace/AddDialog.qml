@@ -13,6 +13,7 @@ Popup {
 
     property var formData: ({})
     property var formErrors: ({})
+    property var prefillData: ({})
     property bool isFormValid: false
 
     signal addClicked(var newData)
@@ -78,17 +79,20 @@ Popup {
     onOpened: {
         let initial = {}
         for (let i = 0; i < currentSchema.length; i++) {
-            initial[currentSchema[i].key] = ""
+            let key = currentSchema[i].key
+            initial[key] = prefillData[key] !== undefined ? prefillData[key] : ""
         }
-        formData = initial
+        formData   = initial
         formErrors = {}
         isFormValid = false
+        validateForm()
     }
 
     onClosed: {
-        formData = {}
-        formErrors = {}
-        entityName = ""
+        formData    = {}
+        formErrors  = {}
+        entityName  = ""
+        prefillData = {}
         isFormValid = false
     }
 

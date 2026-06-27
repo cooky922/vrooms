@@ -7,6 +7,20 @@ Item {
     id: workspaceScreen
     property string currentView: "Dashboard"
 
+    // Navigate to a related entity record — switches the nav tab and opens ViewDialog
+    function navigateToRecord(entityName, recordId) {
+        let name = appUtils.renameEntityName(entityName)
+        appDataViewController.reselectEntity(name)
+        let tabName = entityName.charAt(0).toUpperCase() + entityName.slice(1) + "s"
+        workspaceScreen.currentView = tabName
+        let record = appDataViewController.getRecordByKey(recordId)
+        Qt.callLater(function() {
+            viewDialog.entityName = entityName
+            viewDialog.viewData   = record
+            viewDialog.open()
+        })
+    }
+
     Rectangle {
         anchors.fill: parent
         color: "#FAFAFA"
@@ -142,7 +156,7 @@ Item {
                         onNavigateRequested: function(viewName) {
                             let name = appUtils.renameEntityName(viewName)
                             appDataViewController.reselectEntity(name)
-                            workspaceScreen.currentView = viewName 
+                            workspaceScreen.currentView = viewName
                         }
                     }
 
@@ -200,6 +214,10 @@ Item {
                 let didFail = !result.success
                 appToast.showToast(result.message, didFail)
             }
+        }
+
+        PostReturnDialog {
+            id: postReturnDialog
         }
     }
 }
