@@ -1,287 +1,344 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "../../../components" as Components
 
 Popup {
     id: popup
-    width: 260
+    
+    width: 320
+    height: 320
+    padding: 0
     modal: true
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
     parent: Overlay.overlay
     x: Math.round((parent.width - width) / 2)
     y: Math.round((parent.height - height) / 2)
 
-    // --- State Properties (12-hour context for UI) ---
     property int selHour: 12
     property int selMinute: 0
     property int selSecond: 0
     property string timeAmPm: "AM"
 
-    // --- Signal ---
     signal timeSelected(int h24, int min, int sec)
+
+    property var ampmModel: ["AM", "PM"]
 
     Overlay.modal: Rectangle { color: "#66000000" }
 
     background: Rectangle {
-        color: "#FFFFFF"; radius: 12
-        border.color: "#E0E0E0"; border.width: 1
+        color: "#FFFFFF"
+        radius: 12
+        border.color: "#E5E7EB"
+        border.width: 1
     }
 
     enter: Transition {
         NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 150 }
         NumberAnimation { property: "scale"; from: 0.95; to: 1.0; duration: 150; easing.type: Easing.OutQuad }
     }
+    
     exit: Transition {
         NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 100 }
     }
 
-    ColumnLayout {
-        width: parent.width
-        spacing: 10
+    component FastTumbler: Tumbler {
+        id: ft
+        
+        property int activeSize: 18
+        property int inactiveSize: 13
+        property bool isNumericMode: false
+        property int numericStart: 0
+        
+        wheelEnabled: false
+        visibleItemCount: 5
+        wrap: true // Infinite wrapping for all
 
-        Text {
-            Layout.alignment: Qt.AlignHCenter
-            text: "Time"
-            font { pixelSize: 14; bold: true; family: appTheme.inclusiveSansFontName }
-            color: "#1A1A1A"
+        function increment() {
+            if (ft.wrap) ft.currentIndex = (ft.currentIndex + 1) % ft.count
+            else ft.currentIndex = Math.min(ft.count - 1, ft.currentIndex + 1)
         }
 
-        Rectangle { Layout.fillWidth: true; height: 1; color: "#EEEEEE" }
+        function decrement() {
+            if (ft.wrap) ft.currentIndex = (ft.currentIndex - 1 + ft.count) % ft.count
+            else ft.currentIndex = Math.max(0, ft.currentIndex - 1)
+        }
 
+        contentItem: ListView {
+            anchors.fill: parent
+            model: ft.model
+            delegate: ft.delegate
+            currentIndex: ft.currentIndex
+            clip: true
+
+            snapMode: ListView.SnapToItem
+            highlightRangeMode: ListView.StrictlyEnforceRange
+
+            highlightMoveDuration: 50  
+            highlightMoveVelocity: -1 
+
+            property real itemH: height / ft.visibleItemCount
+            preferredHighlightBegin: (height / 2) - (itemH / 2)
+            preferredHighlightEnd: (height / 2) + (itemH / 2)
+
+            onCurrentIndexChanged: {
+                if (ft.currentIndex !== currentIndex) {
+                    ft.currentIndex = currentIndex
+                }
+            }
+        }
+
+        WheelHandler {
+            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+            property bool processing: false
+            property int scrollAccumulator: 0
+            
+            onWheel: (event) => {
+                if (processing) return
+                processing = true
+                
+                scrollAccumulator += event.angleDelta.y
+                while (scrollAccumulator >= 120) {
+                    ft.decrement()
+                    scrollAccumulator -= 120
+                }
+                while (scrollAccumulator <= -120) {
+                    ft.increment()
+                    scrollAccumulator += 120
+                }
+                processing = false
+            }
+        }
+
+        delegate: Text {
+            text: ft.isNumericMode ? String(index + ft.numericStart).padStart(2, '0') : (typeof modelData !== "undefined" ? modelData : "")
+            font.pixelSize: Math.abs(Tumbler.displacement) < 0.5 ? ft.activeSize : ft.inactiveSize
+            font.bold: Math.abs(Tumbler.displacement) < 0.5
+            font.family: typeof appTheme !== "undefined" ? appTheme.rethinkSansFontName : "sans-serif"
+            color: Math.abs(Tumbler.displacement) < 0.5 ? "black" : "#9CA3AF"
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            opacity: 1.0 - (Math.abs(Tumbler.displacement) * 0.25)
+        }
+    }
+
+    ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: 16
+        spacing: 12
+
+        // Title
+        Item {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 28
+            Text {
+                anchors.centerIn: parent
+                text: "Select Time"
+                font.pixelSize: 14
+                font.bold: true
+                font.family: typeof appTheme !== "undefined" ? appTheme.rethinkSansFontName : "sans-serif"
+                color: "black"
+            }
+        }
+
+        // Edge-to-Edge Separator
+        Rectangle { 
+            Layout.fillWidth: true
+            Layout.leftMargin: -16
+            Layout.rightMargin: -16
+            Layout.preferredHeight: 1.5
+            color: "#D1D5DB" 
+        }
+
+        // ==========================================
+        // TUMBLER SCROLL WHEELS
+        // ==========================================
+        Item {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+
+            Rectangle {
+                anchors.centerIn: parent
+                width: parent.width
+                height: 32
+                color: "#F3F4F6"
+                radius: 8
+            }
+
+            RowLayout {
+                anchors.fill: parent
+                spacing: 0
+
+                // Hours
+                FastTumbler {
+                    id: hourT
+                    Layout.fillWidth: true; Layout.fillHeight: true
+                    model: 12
+                    isNumericMode: true; numericStart: 1
+                    property bool ignoreIndex: false
+                    
+                    Connections {
+                        target: popup
+                        function onSelHourChanged() {
+                            if (!hourT.ignoreIndex && hourT.currentIndex !== popup.selHour - 1) {
+                                hourT.ignoreIndex = true
+                                hourT.currentIndex = popup.selHour - 1
+                                hourT.ignoreIndex = false
+                            }
+                        }
+                    }
+                    onCurrentIndexChanged: {
+                        if (!ignoreIndex && currentIndex >= 0 && currentIndex < count) {
+                            popup.selHour = currentIndex + 1
+                        }
+                    }
+                    Component.onCompleted: currentIndex = popup.selHour - 1
+                }
+                
+                Text { text: ":"; font.pixelSize: 18; font.bold: true; color: "black"; Layout.alignment: Qt.AlignVCenter }
+
+                // Minutes
+                FastTumbler {
+                    id: minT
+                    Layout.fillWidth: true; Layout.fillHeight: true
+                    model: 60
+                    isNumericMode: true; numericStart: 0
+                    property bool ignoreIndex: false
+                    
+                    Connections {
+                        target: popup
+                        function onSelMinuteChanged() {
+                            if (!minT.ignoreIndex && minT.currentIndex !== popup.selMinute) {
+                                minT.ignoreIndex = true
+                                minT.currentIndex = popup.selMinute
+                                minT.ignoreIndex = false
+                            }
+                        }
+                    }
+                    onCurrentIndexChanged: {
+                        if (!ignoreIndex && currentIndex >= 0 && currentIndex < count) {
+                            popup.selMinute = currentIndex
+                        }
+                    }
+                    Component.onCompleted: currentIndex = popup.selMinute
+                }
+
+                Text { text: ":"; font.pixelSize: 18; font.bold: true; color: "black"; Layout.alignment: Qt.AlignVCenter }
+
+                // Seconds
+                FastTumbler {
+                    id: secT
+                    Layout.fillWidth: true; Layout.fillHeight: true
+                    model: 60
+                    isNumericMode: true; numericStart: 0
+                    property bool ignoreIndex: false
+                    
+                    Connections {
+                        target: popup
+                        function onSelSecondChanged() {
+                            if (!secT.ignoreIndex && secT.currentIndex !== popup.selSecond) {
+                                secT.ignoreIndex = true
+                                secT.currentIndex = popup.selSecond
+                                secT.ignoreIndex = false
+                            }
+                        }
+                    }
+                    onCurrentIndexChanged: {
+                        if (!ignoreIndex && currentIndex >= 0 && currentIndex < count) {
+                            popup.selSecond = currentIndex
+                        }
+                    }
+                    Component.onCompleted: currentIndex = popup.selSecond
+                }
+
+                Item { Layout.preferredWidth: 8 }
+
+                // AM / PM
+                FastTumbler {
+                    id: ampmT
+                    Layout.fillWidth: true; Layout.fillHeight: true
+                    model: ampmModel
+                    property bool ignoreIndex: false
+                    
+                    Connections {
+                        target: popup
+                        function onTimeAmPmChanged() {
+                            let targetIdx = popup.timeAmPm === "AM" ? 0 : 1
+                            if (!ampmT.ignoreIndex && ampmT.currentIndex !== targetIdx) {
+                                ampmT.ignoreIndex = true
+                                ampmT.currentIndex = targetIdx
+                                ampmT.ignoreIndex = false
+                            }
+                        }
+                    }
+                    onCurrentIndexChanged: {
+                        if (!ignoreIndex && currentIndex >= 0 && currentIndex < count) {
+                            popup.timeAmPm = currentIndex === 0 ? "AM" : "PM"
+                        }
+                    }
+                    Component.onCompleted: currentIndex = popup.timeAmPm === "AM" ? 0 : 1
+                }
+            }
+        }
+
+        // Edge-to-Edge Separator
+        Rectangle { 
+            Layout.fillWidth: true
+            Layout.leftMargin: -16
+            Layout.rightMargin: -16
+            Layout.preferredHeight: 1.5
+            color: "#D1D5DB" 
+        }
+
+        // ==========================================
+        // BOTTOM BUTTONS
+        // ==========================================
         RowLayout {
             Layout.fillWidth: true
-            Layout.leftMargin: 8
-            Layout.rightMargin: 8
-            spacing: 4
+            spacing: 8
 
-            // Hour
-            ColumnLayout {
-                Layout.fillWidth: true; spacing: 4
-                Rectangle {
-                    Layout.alignment: Qt.AlignHCenter
-                    width: 44; height: 32; radius: 8
-                    color: hourUpArea.containsMouse ? "#F0F0F0" : "#FAFAFA"
-                    border.color: "#E0E0E0"; border.width: 1
-                    Text { anchors.centerIn: parent; text: "∧"; font.pixelSize: 14; color: "#555" }
-                    MouseArea {
-                        id: hourUpArea
-                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                        onClicked: popup.selHour = (popup.selHour % 12) + 1
-                    }
-                }
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    text: String(popup.selHour).padStart(2, '0')
-                    font { pixelSize: 22; bold: true; family: appTheme.rethinkSansFontName }
-                    color: "#1A1A1A"
-                }
-                Text { 
-                    Layout.alignment: Qt.AlignHCenter
-                    text: "hour"
-                    font { pixelSize: 10; family: appTheme.rethinkSansFontName }
-                    color: "#999" 
-                }
-                Rectangle {
-                    Layout.alignment: Qt.AlignHCenter
-                    width: 44; height: 32; radius: 8
-                    color: hourDownArea.containsMouse ? "#F0F0F0" : "#FAFAFA"
-                    border.color: "#E0E0E0"; border.width: 1
-                    Text { anchors.centerIn: parent; text: "∨"; font.pixelSize: 14; color: "#555" }
-                    MouseArea {
-                        id: hourDownArea
-                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                        onClicked: popup.selHour = popup.selHour === 1 ? 12 : popup.selHour - 1
-                    }
-                }
-            }
-
-            Text { 
-                text: ":"
-                font { pixelSize: 20; bold: true }
-                color: "#CCCCCC"
-                Layout.alignment: Qt.AlignVCenter
-                bottomPadding: 20 
-            }
-
-            // Minute
-            ColumnLayout {
-                Layout.fillWidth: true; spacing: 4
-                Rectangle {
-                    Layout.alignment: Qt.AlignHCenter
-                    width: 44; height: 32; radius: 8
-                    color: minUpArea.containsMouse ? "#F0F0F0" : "#FAFAFA"
-                    border.color: "#E0E0E0"; border.width: 1
-                    Text { anchors.centerIn: parent; text: "∧"; font.pixelSize: 14; color: "#555" }
-                    MouseArea {
-                        id: minUpArea
-                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                        onClicked: popup.selMinute = (popup.selMinute + 1) % 60
-                    }
-                }
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    text: String(popup.selMinute).padStart(2, '0')
-                    font { pixelSize: 22; bold: true; family: appTheme.rethinkSansFontName }
-                    color: "#1A1A1A"
-                }
-                Text { 
-                    Layout.alignment: Qt.AlignHCenter
-                    text: "min"
-                    font { pixelSize: 10; family: appTheme.rethinkSansFontName }
-                    color: "#999" 
-                }
-                Rectangle {
-                    Layout.alignment: Qt.AlignHCenter
-                    width: 44; height: 32; radius: 8
-                    color: minDownArea.containsMouse ? "#F0F0F0" : "#FAFAFA"
-                    border.color: "#E0E0E0"; border.width: 1
-                    Text { anchors.centerIn: parent; text: "∨"; font.pixelSize: 14; color: "#555" }
-                    MouseArea {
-                        id: minDownArea
-                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                        onClicked: popup.selMinute = popup.selMinute === 0 ? 59 : popup.selMinute - 1
-                    }
-                }
-            }
-
-            Text { 
-                text: ":"
-                font { pixelSize: 20; bold: true }
-                color: "#CCCCCC"
-                Layout.alignment: Qt.AlignVCenter
-                bottomPadding: 20 
-            }
-
-            // Second
-            ColumnLayout {
-                Layout.fillWidth: true; spacing: 4
-                Rectangle {
-                    Layout.alignment: Qt.AlignHCenter
-                    width: 44; height: 32; radius: 8
-                    color: secUpArea.containsMouse ? "#F0F0F0" : "#FAFAFA"
-                    border.color: "#E0E0E0"; border.width: 1
-                    Text { anchors.centerIn: parent; text: "∧"; font.pixelSize: 14; color: "#555" }
-                    MouseArea {
-                        id: secUpArea
-                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                        onClicked: popup.selSecond = (popup.selSecond + 1) % 60
-                    }
-                }
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    text: String(popup.selSecond).padStart(2, '0')
-                    font { pixelSize: 22; bold: true; family: appTheme.rethinkSansFontName }
-                    color: "#1A1A1A"
-                }
-                Text { 
-                    Layout.alignment: Qt.AlignHCenter
-                    text: "sec"
-                    font { pixelSize: 10; family: appTheme.rethinkSansFontName }
-                    color: "#999"
-                }
-                Rectangle {
-                    Layout.alignment: Qt.AlignHCenter
-                    width: 44; height: 32; radius: 8
-                    color: secDownArea.containsMouse ? "#F0F0F0" : "#FAFAFA"
-                    border.color: "#E0E0E0"; border.width: 1
-                    Text { anchors.centerIn: parent; text: "∨"; font.pixelSize: 14; color: "#555" }
-                    MouseArea {
-                        id: secDownArea
-                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                        onClicked: popup.selSecond = popup.selSecond === 0 ? 59 : popup.selSecond - 1
-                    }
-                }
-            }
-        }
-
-        // AM / PM
-        RowLayout {
-            Layout.alignment: Qt.AlignHCenter
-            spacing: 4
-            Rectangle {
-                width: 56; height: 30; radius: 8
-                color: popup.timeAmPm === "AM" ? "#1A1A1A" : (amArea.containsMouse ? "#F0F0F0" : "#FAFAFA")
-                border.color: "#E0E0E0"; border.width: 1
-                Text { 
-                    anchors.centerIn: parent
-                    text: "AM"
-                    font { pixelSize: 12; bold: popup.timeAmPm === "AM"; family: appTheme.rethinkSansFontName }
-                    color: popup.timeAmPm === "AM" ? "#FFFFFF" : "#555" 
-                }
-                MouseArea {
-                    id: amArea
-                    anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                    onClicked: popup.timeAmPm = "AM"
-                }
-            }
-            Rectangle {
-                width: 56; height: 30; radius: 8
-                color: popup.timeAmPm === "PM" ? "#1A1A1A" : (pmArea.containsMouse ? "#F0F0F0" : "#FAFAFA")
-                border.color: "#E0E0E0"; border.width: 1
-                Text { 
-                    anchors.centerIn: parent
-                    text: "PM"
-                    font { pixelSize: 12; bold: popup.timeAmPm === "PM"; family: appTheme.rethinkSansFontName }
-                    color: popup.timeAmPm === "PM" ? "#FFFFFF" : "#555" 
-                }
-                MouseArea {
-                    id: pmArea
-                    anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                    onClicked: popup.timeAmPm = "PM"
-                }
-            }
-        }
-
-        // Preview
-        Text {
-            Layout.alignment: Qt.AlignHCenter
-            text: String(popup.selHour).padStart(2, '0') + " : " + String(popup.selMinute).padStart(2, '0') + " : " + String(popup.selSecond).padStart(2, '0') + " " + popup.timeAmPm
-            font { pixelSize: 12; family: appTheme.rethinkSansFontName }
-            color: "#555"
-        }
-
-        Rectangle { Layout.fillWidth: true; height: 1; color: "#EEEEEE" }
-
-        // OK Button (Triggers Conversion and Signal)
-        Rectangle {
-            Layout.fillWidth: true; height: 38; radius: 8
-            color: okTimeArea.containsMouse ? "#2563EB" : "#3B82F6"
-            Text { 
-                anchors.centerIn: parent
-                text: "OK"
-                font { pixelSize: 13; bold: true; family: appTheme.rethinkSansFontName }
-                color: "#FFFFFF" 
-            }
-            
-            MouseArea {
-                id: okTimeArea
-                anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+            Components.PrimaryButton {
+                text: "Now"
+                Layout.preferredHeight: 32
+                enableAnimate: true
+                buttonColor: "#F3F4F6"
+                textColor: "#111827"
                 onClicked: {
-                    var h24 = popup.selHour
-                    if (popup.timeAmPm === "AM") { if (h24 === 12) h24 = 0 }
-                    else { if (h24 !== 12) h24 += 12 }
+                    var c = new Date()
+                    var h = c.getHours()
+                    popup.timeAmPm = h >= 12 ? "PM" : "AM"
+                    popup.selHour = (h % 12 === 0 ? 12 : h % 12)
+                    popup.selMinute = c.getMinutes()
+                    popup.selSecond = c.getSeconds()
+                }
+            }
+
+            Item { Layout.fillWidth: true } 
+
+            Components.SecondaryButton {
+                text: "Cancel"
+                Layout.preferredHeight: 32
+                enableAnimate: true
+                onClicked: popup.close()
+            }
+
+            Components.PrimaryButton {
+                text: "OK"
+                Layout.preferredHeight: 32
+                enableAnimate: true
+                buttonColor: "black"
+                textColor: "#FFFFFF"
+                onClicked: {
+                    var h24 = selHour
+                    if (timeAmPm === "AM") { 
+                        if (h24 === 12) h24 = 0 
+                    } else { 
+                        if (h24 !== 12) h24 += 12 
+                    }
                     
-                    popup.timeSelected(h24, popup.selMinute, popup.selSecond)
+                    popup.timeSelected(h24, selMinute, selSecond)
                     popup.close()
                 }
-            }
-        }
-
-        // Cancel Button
-        Rectangle {
-            Layout.fillWidth: true; height: 38; radius: 8
-            color: cancelTimeArea.containsMouse ? "#F5F5F5" : "transparent"
-            border.color: "#E0E0E0"; border.width: 1
-            Text { 
-                anchors.centerIn: parent
-                text: "Cancel"
-                font { pixelSize: 13; family: appTheme.rethinkSansFontName }
-                color: "#555" 
-            }
-            MouseArea {
-                id: cancelTimeArea
-                anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                onClicked: popup.close()
             }
         }
     }

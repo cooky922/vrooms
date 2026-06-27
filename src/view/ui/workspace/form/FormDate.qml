@@ -26,41 +26,18 @@ ColumnLayout {
     property string _selDay: ""
 
     // --- Models ---
-    property var _yearModel: []
     property var _monthModel: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-    property var _dayModel: []
 
-    Component.onCompleted: {
-        if (root.isViewOnly) return; 
-        let y = []
-        let currY = new Date().getFullYear()
-        for (let i = currY - 10; i <= currY + 15; i++) y.push(i.toString())
-        root._yearModel = y
-    }
-
-    on_SelYearChanged: root.updateDayModel()
-    on_SelMonthChanged: root.updateDayModel()
-
-    function updateDayModel() {
-        if (!root._hasData || root.isViewOnly) return;
-        
-        var y = parseInt(root._selYear);
-        if (isNaN(y)) y = new Date().getFullYear();
-        
-        var mIdx = root._monthModel.indexOf(root._selMonth);
-        if (mIdx === -1) mIdx = 0;
-        
-        var days = new Date(y, mIdx + 1, 0).getDate();
-        
-        var arr = [];
-        for (var i = 1; i <= days; i++) arr.push(String(i).padStart(2, '0'));
-        root._dayModel = arr;
-        
-        var currentD = parseInt(root._selDay);
-        if (!isNaN(currentD) && currentD > days) {
-            root._selDay = String(days).padStart(2, '0');
-            root.checkAndEmit();
+    function formatReadableDate(val) {
+        if (!val) return "";
+        let parts = val.toString().split(" ")[0].split("-");
+        if (parts.length === 3) {
+            let mIdx = parseInt(parts[1]) - 1;
+            let m = root._monthModel[mIdx >= 0 && mIdx < 12 ? mIdx : 0];
+            let d = parseInt(parts[2]).toString();
+            return `${parts[0]} ${m} ${d}`;
         }
+        return val;
     }
 
     function checkAndEmit() {
@@ -87,7 +64,6 @@ ColumnLayout {
                 root._selMonth = root._monthModel[parseInt(parts[1]) - 1];
                 root._selDay = parts[2];
                 root._hasData = true;
-                root.updateDayModel();
             }
         }
     }
@@ -100,23 +76,19 @@ ColumnLayout {
                 root._selMonth = root._monthModel[parseInt(parts[1]) - 1];
                 root._selDay = parts[2];
                 root._hasData = true;
-                root.updateDayModel();
             }
         }
     }
 
-    component MenuSelector: Rectangle {
-        id: selRoot
-        property string placeholder: ""
-        property string currentValue: ""
-        property var modelItems: []
-        property real targetWidth: 40
-        signal selected(string val)
+    component AggregatedChip: Rectangle {
+        id: chip
+        property string text: ""
+        signal clicked()
 
-        Layout.preferredWidth: targetWidth
-        Layout.preferredHeight: 24
+        Layout.preferredHeight: 20
+        Layout.preferredWidth: contentText.implicitWidth + 20
         Layout.alignment: Qt.AlignVCenter
-        radius: 6
+        radius: 12
         color: ma.containsMouse ? "#D1D5DB" : "#E5E7EB" 
         
         transform: Translate {
@@ -125,11 +97,12 @@ ColumnLayout {
         }
 
         Text {
+            id: contentText
             anchors.centerIn: parent
-            text: selRoot.currentValue === "" ? selRoot.placeholder : selRoot.currentValue
-            color: selRoot.currentValue === "" ? "#6B7280" : "#111827"
+            text: chip.text
+            color: "#111827"
             font.pixelSize: 11
-            font.bold: selRoot.currentValue !== ""
+            font.bold: true
             font.family: typeof appTheme !== "undefined" ? appTheme.rethinkSansFontName : "sans-serif"
         }
 
@@ -139,43 +112,22 @@ ColumnLayout {
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: {
-                cmenuLoader.active = true 
                 field.forceActiveFocus()
-            }
-        }
-
-        Loader {
-            id: cmenuLoader
-            active: false
-            onLoaded: item.toggle()
-            sourceComponent: Component {
-                Components.ContextMenu {
-                    y: selRoot.height + 4
-                    onClosed: cmenuLoader.active = false 
-                    
-                    Repeater {
-                        model: selRoot.modelItems
-                        Components.ContextMenuItem {
-                            text: modelData
-                            onTriggered: { 
-                                selRoot.selected(modelData)
-                                close() 
-                            }
-                        }
-                    }
-                }
+                chip.clicked()
             }
         }
     }
 
+    // --- UI ---
     Text {
         text: root.label + (root.isRequired ? " <font color='#E53935'>*</font>" : "")
         textFormat: Text.RichText
-        font.pixelSize: 13
+        font.pixelSize: 13 
         font.family: typeof appTheme !== "undefined" ? appTheme.inclusiveSansFontName : "sans-serif"
         color: "#333333"
     }
 
+    // Main Container Pill
     Rectangle {
         id: field
         focus: true
@@ -215,7 +167,6 @@ ColumnLayout {
             font.pixelSize: 12
             font.family: typeof appTheme !== "undefined" ? appTheme.rethinkSansFontName : "sans-serif"
             
-            // Set text to "N/A" and make it a lighter gray if it's empty
             color: (!root.value || root.value.toString().trim() === "") ? "#9CA3AF" : "#666666"
             text: {
                 if (!root.value || root.value.toString().trim() === "") return "N/A";
@@ -238,14 +189,32 @@ ColumnLayout {
                         spacing: 8
                         visible: !root._hasData
 
-                        Text {
+                        // Placeholder doubles as the popup trigger when empty
+                        Item {
                             Layout.fillWidth: true
-                            text: root.placeholderText
-                            font.pixelSize: 11
-                            font.family: typeof appTheme !== "undefined" ? appTheme.rethinkSansFontName : "sans-serif"
-                            color: "#AAAAAA"
+                            Layout.fillHeight: true
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: root.placeholderText
+                                font.pixelSize: 11
+                                font.family: typeof appTheme !== "undefined" ? appTheme.rethinkSansFontName : "sans-serif"
+                                color: maPlaceholder.containsMouse ? "#6B7280" : "#AAAAAA"
+                            }
+
+                            MouseArea {
+                                id: maPlaceholder
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    field.forceActiveFocus()
+                                    calLoader.active = true
+                                }
+                            }
                         }
 
+                        // Today Button
                         Rectangle {
                             Layout.preferredWidth: 64
                             Layout.preferredHeight: 24
@@ -284,26 +253,12 @@ ColumnLayout {
                         spacing: 6
                         visible: root._hasData
 
-                        MenuSelector { targetWidth: 46; placeholder: "YYYY"; currentValue: root._selYear; modelItems: root._yearModel; onSelected: function(val) { root._selYear = val; root.checkAndEmit(); } }
-                        MenuSelector { targetWidth: 40; placeholder: "MMM";  currentValue: root._selMonth; modelItems: root._monthModel; onSelected: function(val) { root._selMonth = val; root.checkAndEmit(); } }
-                        MenuSelector { targetWidth: 32; placeholder: "DD";   currentValue: root._selDay; modelItems: root._dayModel; onSelected: function(val) { root._selDay = val; root.checkAndEmit(); } }
+                        AggregatedChip {
+                            text: `${root._selYear} ${root._selMonth} ${root._selDay}`
+                            onClicked: calLoader.active = true
+                        }
 
                         Item { Layout.fillWidth: true } 
-
-                        // Calendar Popup Icon
-                        Rectangle {
-                            width: 24; height: 24; radius: 12
-                            color: openCalArea.containsMouse ? "#E5E7EB" : "transparent"
-                            Image { anchors.centerIn: parent; source: "../../../../../assets/icons/calendar.svg"; sourceSize: Qt.size(12, 12); opacity: 0.7 }
-                            MouseArea {
-                                id: openCalArea
-                                anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    field.forceActiveFocus()
-                                    calLoader.active = true
-                                }
-                            }
-                        }
 
                         // Clear Icon (Always Rightmost)
                         Rectangle {
@@ -327,7 +282,6 @@ ColumnLayout {
         }
     }
 
-    // --- Lazy Loaded Calendar Popup ---
     Loader {
         id: calLoader
         active: false
