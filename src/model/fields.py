@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Optional, List, Dict, Any
 
 UNIT_STATUS_OPTIONS              = ['Available', 'Rented', 'Maintenance']
-UNIT_STATUS_USER_EDITABLE        = ['Available', 'Maintenance']  # 'Rented' is system-managed
+UNIT_STATUS_OPTIONS_EDITABLE     = ['Available', 'Maintenance']  # 'Rented' is system-managed
 CUSTOMER_STATUS_OPTIONS          = ['Active', 'Blacklisted']
 RENT_STATUS_OPTIONS              = ['Ongoing', 'Closed']
 LIABILITY_STATUS_OPTIONS         = ['Pending', 'Settled']
@@ -112,11 +112,10 @@ class UnitField(Enum):
         'unitStatus', 'Status',
         type=FieldType.SELECT,
         required=True,
-        # Only Available/Maintenance shown; QML must lock the field when current value is 'Rented'
-        options=UNIT_STATUS_USER_EDITABLE,
+        options=UNIT_STATUS_OPTIONS,
         editable_in_add=False,   # defaults to 'Available' on insert — system sets it
         editable_in_edit=True,   # editable unless current status == 'Rented' (enforced in QML/controller)
-        dynamic_source='unitStatusOptions',
+        dynamic_source='unitStatusOptions'
     )
     DAILY_RATE = FieldInfo(
         'dailyRate', 'Daily Rate (₱)',

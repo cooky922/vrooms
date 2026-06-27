@@ -186,20 +186,35 @@ Popup {
                         }
 
                         onLoaded: {
-                            item.fieldKey   = modelData.key
-                            item.label      = modelData.label
-                            item.isRequired = modelData.required || false
-                            item.isViewOnly = modelData.is_primary_key || false
+                            let pk = appDataViewController.getPrimaryKey()
+
+                            item.fieldKey    = modelData.key
+                            item.label       = modelData.label
+                            item.isRequired  = modelData.required || false
 
                             if (modelData.placeholder) {
                                 item.placeholderText = modelData.placeholder
                             }
-                            if (modelData.options) {
-                                item.options = modelData.options
+
+                            // Inject dynamic options map from Python
+                            let dynamicOpts = appDataViewController.dynamicOptions
+                            if (dynamicOpts[modelData.key]) {
+                                item.options = dynamicOpts[modelData.key]
+                            } else if (modelData.options) {
+                                item.options = modelData.options // Fallback for other fields
                             }
 
+                            // Reactive Error Text Binding
                             item.errorText = Qt.binding(function() {
                                 return root.formErrors[modelData.key] || ""
+                            })
+
+                            // REACTIVE VIEW-ONLY BINDING:
+                            // Continuously watches formData. If the record updates to a rented unit, it locks instantly.
+                            item.isViewOnly = Qt.binding(function() {
+                                if (modelData.key === pk) return true;
+                                if (modelData.key === "unitStatus" && root.formData["unitStatus"] === "Rented") return true;
+                                return false;
                             })
 
                             item.inputValueChanged.connect(function(k, v) { root.setFieldValue(k, v) })

@@ -1,6 +1,6 @@
 import math
 from PyQt6.QtCore import QObject, QUrl, pyqtSlot, pyqtProperty, pyqtSignal
-from src.database import Filter, Paged, Sorted, Search, SearchMatchType
+from src.database import Filter, Paged, Sorted, Search, SearchMatchType, SQLDatabase
 from src.model import (
     EntityKind,
     FieldInfo,
@@ -17,6 +17,7 @@ from src.model import (
 )
 from src.model.validators import (
     UNIT_STATUS_OPTIONS,
+    UNIT_STATUS_OPTIONS_EDITABLE,
     CUSTOMER_STATUS_OPTIONS,
     RENT_STATUS_OPTIONS,
     LIABILITY_STATUS_OPTIONS
@@ -95,38 +96,61 @@ class QMLDataViewController(QObject):
     @pyqtProperty(int, notify=searchChanged)
     def searchMatchType(self): return self._search_match_type.value
 
-    @pyqtProperty('QVariantList', notify=selectedEntityChanged)
-    def selectedEntityTransformedModel(self):
-        fields = self.entity_kind.get_model()
+    @pyqtProperty('QVariantMap', notify=selectedEntityChanged)
+    def dynamicOptions(self):
+        options_map = {}
+        
+        # Helper to format simple string arrays into the {value, text} structure
+        def format_simple(opts):
+            return [{"value": opt, "text": opt} for opt in opts]
+        
+        if self.entity_kind == EntityKind.UNIT:
+            options_map['unitStatus'] = format_simple(UNIT_STATUS_OPTIONS_EDITABLE)
+            
+        elif self.entity_kind == EntityKind.CUSTOMER:
+            options_map['customerStatus'] = format_simple(CUSTOMER_STATUS_OPTIONS)
+            
+        elif self.entity_kind == EntityKind.RENT:
+            options_map['rentStatus'] = format_simple(RENT_STATUS_OPTIONS)
+            
+            # Fetch Available Units for Rent
+            units = SQLDatabase.fetch_all("SELECT unitID, unitBrand, unitModel FROM units WHERE unitStatus = 'Available'")
+            options_map['unitID'] = [{"value": str(u['unitID']), "text": f"{u['unitID']} - {u['unitBrand']} {u['unitModel']}"} for u in units]
+            
+            # Fetch Eligible Customers for Rent
+            customers = SQLDatabase.fetch_all("SELECT customerID, firstName, lastName FROM customers")
+            eligible_customers = []
+            for c in customers:
+                is_eligible, _ = CustomerRepository.check_eligibility(c['customerID'])
+                if is_eligible:
+                    eligible_customers.append({"value": str(c['customerID']), "text": f"{c['customerID']} - {c['firstName']} {c['lastName']}"})
+            options_map['customerID'] = eligible_customers
+            
+        elif self.entity_kind == EntityKind.LIABILITY:
+            options_map['liabilityStatus'] = format_simple(LIABILITY_STATUS_OPTIONS)
+            
+            # Fetch Customers with NO pending liabilities
+            customers = SQLDatabase.fetch_all("""
+                SELECT c.customerID, c.firstName, c.lastName 
+                FROM customers c
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM liabilities l 
+                    WHERE l.customerID = c.customerID AND l.liabilityStatus = 'Pending'
+                )
+            """)
+            options_map['customerID'] = [{"value": str(c['customerID']), "text": f"{c['customerID']} - {c['firstName']} {c['lastName']}"} for c in customers]
+            
+        elif self.entity_kind == EntityKind.PAYMENT:
+            # For Payments, any customer with an outstanding balance
+            customers = SQLDatabase.fetch_all("SELECT customerID, firstName, lastName FROM customers")
+            debt_customers = []
+            for c in customers:
+                balance = CustomerRepository.get_balance(c['customerID'])
+                if balance > 0:
+                    debt_customers.append({"value": str(c['customerID']), "text": f"{c['customerID']} - {c['firstName']} {c['lastName']} (₱{balance:,.2f})"})
+            options_map['customerID'] = debt_customers
 
-        def get_options(field_name: str):
-            match field_name:
-                case 'unitStatus':
-                    return UNIT_STATUS_OPTIONS
-                case 'customerStatus':
-                    return CUSTOMER_STATUS_OPTIONS
-                case 'rentStatus':
-                    return RENT_STATUS_OPTIONS
-                case 'liabilityStatus':
-                    return LIABILITY_STATUS_OPTIONS
-                # TODO: filter customers
-                case 'customerID' if self.entity_kind == EntityKind.RENT:
-                    return CustomerRepository.get_keys()
-                # TODO: filter units
-                case 'unitID' if self.entity_kind == EntityKind.RENT:
-                    return UnitRepository.get_keys()
-                # TODO: filter
-                case 'customerID' if self.entity_kind in (EntityKind.PAYMENT, EntityKind.LIABILITY):
-                    return RentRepository.get_keys()
-                case _:
-                    return []
-
-        return [{
-            'internal_name': f.value.internal_name,
-            'display_name':  f.value.display_name,
-            'options':       get_options(f.value.internal_name),
-        } for f in fields]
-
+        return options_map
     # ── Slots ─────────────────────────────────────────────────────────────────
 
     @pyqtSlot(str)

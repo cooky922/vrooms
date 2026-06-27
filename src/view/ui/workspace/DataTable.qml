@@ -52,7 +52,7 @@ Rectangle {
                 clip: true
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignTop
-                model: appDataViewController.selectedEntityTransformedModel
+                model: appEntitySchemaMap[appDataViewController.selectedEntityName]
 
                 delegate: Item {
                     implicitHeight: 30
@@ -76,7 +76,7 @@ Rectangle {
 
                             Text {
                                 leftPadding: 16
-                                text: (modelData && modelData.display_name) ? modelData.display_name : ""
+                                text: (modelData && modelData.label) ? modelData.label : ""
                                 font.bold: true
                                 font.pixelSize: 12
                                 font.family: appTheme.rethinkSansFontName
