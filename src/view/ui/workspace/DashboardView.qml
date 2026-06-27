@@ -32,41 +32,6 @@ Item {
             Item { Layout.fillWidth: true }
 
             Components.PrimaryButton {
-                text: "Test"
-                textSize: 13
-                enableAnimate: true
-                onClicked: testMenu.toggle()
-
-                Components.ContextMenu {
-                    id: testMenu
-                    y: parent.height + 3 + (testMenu.slideOffset !== undefined ? testMenu.slideOffset : 0)
-                    x: -26
-
-                    Components.ContextMenuHeading { text: "Manage Unit" }
-                    Components.ContextMenuItem {
-                        text: "Edit Details"
-                        iconName: "edit"
-                        shortcutText: "Ctrl+E"
-                        onTriggered: appUtils.printLog("Edit clicked")
-                    }
-                    Components.ContextMenuItem {
-                        id: checkItem
-                        text: "Mark as Available"
-                        checkable: true
-                        onTriggered: checkItem.checked = checkItem.checked ^ true
-                    }
-                    Components.ContextMenuSeparator { Layout.fillWidth: true }
-                    Components.ContextMenuHeading { text: "Advanced" }
-                    Components.ContextMenuItem {
-                        text: "Delete Record"
-                        iconName: "delete"
-                        itemColor: "#E53935"
-                        onTriggered: appUtils.printLog("Delete clicked")
-                    }
-                }
-            }
-
-            Components.PrimaryButton {
                 text: "User"
                 textSize: 13
                 iconName: "account"

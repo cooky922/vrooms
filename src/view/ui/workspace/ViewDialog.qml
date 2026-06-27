@@ -185,6 +185,7 @@ Popup {
                                     case "date":     return "form/FormDate.qml"
                                     case "datetime": return "form/FormDateTime.qml"
                                     case "select":   return "form/FormSelect.qml"
+                                    case "select_id": return "form/FormSelectID.qml"
                                     case "file":     return "form/FormFile.qml"
                                     default:         return "form/FormText.qml"
                                 }

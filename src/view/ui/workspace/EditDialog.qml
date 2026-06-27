@@ -180,6 +180,7 @@ Popup {
                                 case "date":     return "form/FormDate.qml"
                                 case "datetime": return "form/FormDateTime.qml"
                                 case "select":   return "form/FormSelect.qml"
+                                case "select_id": return "form/FormSelectID.qml"
                                 case "file":     return "form/FormFile.qml"
                                 default:         return "form/FormText.qml"
                             }
@@ -197,7 +198,7 @@ Popup {
                             }
 
                             // Inject dynamic options map from Python
-                            if (modelData.type === "select") {
+                            if (modelData.type === "select" || modelData.type === "select_id") {
                                 // Inject dynamic options for THIS dialog's entity (not the main table's)
                                 let dynamicOpts = appDataViewController.dynamicOptionsFor(root.entityName)
                                 if (dynamicOpts[modelData.key]) {

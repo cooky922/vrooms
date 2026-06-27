@@ -16,6 +16,7 @@ class FieldType(Enum):
     DATETIME = 'datetime'
     FILE     = 'file'
     SELECT   = 'select'
+    SELECT_ID = 'select_id'
 
 @dataclass(frozen=True)
 class FieldInfo:
@@ -252,7 +253,7 @@ class RentField(Enum):
     )
     CUSTOMER_ID = FieldInfo(
         'customerID', 'Customer',
-        type=FieldType.INT,
+        type=FieldType.SELECT_ID,
         required=True,
         is_foreign_key=True,
         placeholder='Select a customer',
@@ -261,7 +262,7 @@ class RentField(Enum):
     )
     UNIT_ID = FieldInfo(
         'unitID', 'Unit',
-        type=FieldType.INT,
+        type=FieldType.SELECT_ID,
         required=True,
         is_foreign_key=True,
         placeholder='Select a unit',
@@ -336,7 +337,7 @@ class LiabilityField(Enum):
     )
     CUSTOMER_ID = FieldInfo(
         'customerID', 'Customer ID',
-        type=FieldType.INT,
+        type=FieldType.SELECT_ID,
         required=True,
         is_foreign_key=True,
         placeholder='Select a customer',
@@ -400,7 +401,7 @@ class PaymentField(Enum):
     )
     CUSTOMER_ID = FieldInfo(
         'customerID', 'Customer ID',
-        type=FieldType.INT,
+        type=FieldType.SELECT_ID,
         required=True,
         is_foreign_key=True,
         placeholder='Select a customer',
@@ -409,7 +410,7 @@ class PaymentField(Enum):
     )
     LIABILITY_ID = FieldInfo(
         'liabilityID', 'Liability ID',
-        type=FieldType.INT,
+        type=FieldType.SELECT_ID,
         required=False,
         is_foreign_key=True,
         placeholder='Select a liability (optional)',

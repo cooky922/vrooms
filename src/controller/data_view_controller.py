@@ -154,10 +154,21 @@ class QMLDataViewController(QObject):
             customers = SQLDatabase.fetch_all("SELECT customerID, firstName, lastName FROM customers")
             debt_customers = []
             for c in customers:
-                balance = CustomerRepository.get_balance(c['customerID'])
-                if balance > 0:
-                    debt_customers.append({"value": str(c['customerID']), "text": f"{c['customerID']} - {c['firstName']} {c['lastName']} (₱{balance:,.2f})"})
+                debt_customers.append({"value": str(c['customerID']), "text": f"{c['customerID']} - {c['firstName']} {c['lastName']}"})
+            #    balance = CustomerRepository.get_balance(c['customerID'])
+            #    if balance > 0:
+            #        debt_customers.append({"value": str(c['customerID']), "text": f"{c['customerID']} - {c['firstName']} {c['lastName']} (₱{balance:,.2f})"})
             options_map['customerID'] = debt_customers
+
+            liabilities = SQLDatabase.fetch_all("SELECT liabilityID, liabilityDescription FROM liabilities WHERE liabilityStatus = 'Pending'")
+            liabilities_list = []
+            for c in liabilities:
+                liabilities_list.append({
+                    "value": str(c['liabilityID']),
+                    "text": f"{c['liabilityID']} - {c['liabilityDescription']}"
+                })
+            options_map['liabilityID'] = liabilities_list
+
 
         return options_map
     # ── Slots ─────────────────────────────────────────────────────────────────
@@ -423,6 +434,16 @@ class QMLDataViewController(QObject):
                 if not data.get(k):
                     data[k] = v
             REPOSITORY_MAP[self.entity_kind].add_record(data)
+            if self.entity_kind == EntityKind.RENT:
+                unit_id = new_data.get('unitID')
+                if unit_id:
+                    # Update unit status in the Units repository
+                    unit_repo = REPOSITORY_MAP[EntityKind.UNIT]
+                    # We fetch current unit record to preserve other fields
+                    unit_record = unit_repo.get_record(str(unit_id))
+                    if unit_record:
+                        unit_record['unitStatus'] = 'Rented'
+                        unit_repo.update_record(unit_record, key=str(unit_id))
             return {'success': True, 'message': 'One item added successfully.'}
         except Exception as e:
             return {'success': False, 'message': str(e)}
@@ -440,6 +461,16 @@ class QMLDataViewController(QObject):
                 if not data.get(k):
                     data[k] = v
             repo.add_record(data)
+            if self.entity_kind == EntityKind.RENT:
+                unit_id = new_data.get('unitID')
+                if unit_id:
+                    # Update unit status in the Units repository
+                    unit_repo = REPOSITORY_MAP[EntityKind.UNIT]
+                    # We fetch current unit record to preserve other fields
+                    unit_record = unit_repo.get_record(str(unit_id))
+                    if unit_record:
+                        unit_record['unitStatus'] = 'Rented'
+                        unit_repo.update_record(unit_record, key=str(unit_id))
             return {'success': True, 'message': 'One item added successfully.'}
         except Exception as e:
             return {'success': False, 'message': str(e)}
