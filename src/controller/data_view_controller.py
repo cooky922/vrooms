@@ -162,6 +162,23 @@ class QMLDataViewController(QObject):
         return options_map
     # ── Slots ─────────────────────────────────────────────────────────────────
 
+    @pyqtSlot(str, result='QVariantMap')
+    def dynamicOptionsFor(self, entity_name: str):
+        """
+        Return the same options map as dynamicOptions but for any entity,
+        regardless of what entity the main table is currently showing.
+        Called by AddDialog when it is opened for a different entity
+        than the one currently selected in the workspace (e.g. opening
+        the 'rent' add-dialog while the main table shows 'unit').
+        """
+        kind = ENTITY_KIND_MAP.get(entity_name.lower(), self.entity_kind)
+        # Temporarily swap entity_kind so the shared helper works, then restore
+        saved = self.entity_kind
+        self.entity_kind = kind
+        result = self.dynamicOptions          # property reads self.entity_kind
+        self.entity_kind = saved
+        return result
+
     @pyqtSlot(str)
     def reselectEntity(self, entity_name: str):
         if self.selectedEntityName != entity_name:
@@ -510,9 +527,9 @@ class QMLDataViewController(QObject):
             customer_id = rent.get('customerID') or ''
             unit_id     = rent.get('unitID') or ''
 
-            now = datetime.now().strftime('%Y-%m-%d %H:%M')
+            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             RentRepository.update_record(
-                updates={**rent, 'rentStatus': 'Returned', 'returnDateTime': now},
+                updates={**rent, 'rentStatus': 'Closed', 'actualReturnDateTime': now},
                 key=rent_id
             )
 
