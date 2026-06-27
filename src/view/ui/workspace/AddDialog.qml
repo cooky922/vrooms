@@ -218,6 +218,10 @@ Popup {
                                 }
                             }
 
+                            if (modelData.type === "date" || modelData.type === "datetime") {
+                                item.canAutoFill = modelData.can_auto_fill
+                            }
+
                             item.errorText = Qt.binding(function() {
                                 return root.formErrors[modelData.key] || ""
                             })

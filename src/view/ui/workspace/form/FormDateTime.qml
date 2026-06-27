@@ -12,6 +12,7 @@ ColumnLayout {
     property var value: ""
     property string placeholderText: "YYYY-MM-DD HH:MM:SS"
     property bool isViewOnly: false
+    property bool canAutoFill: true
     property string errorText: ""
     
     signal inputValueChanged(string key, var val)
@@ -275,6 +276,7 @@ ColumnLayout {
                             Layout.preferredHeight: 24
                             radius: 12
                             color: nowMouseArea.containsMouse ? "#E5E7EB" : "transparent"
+                            visible: root.canAutoFill
                             
                             RowLayout {
                                 anchors.centerIn: parent

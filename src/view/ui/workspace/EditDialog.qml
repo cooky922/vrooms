@@ -197,20 +197,24 @@ Popup {
                             }
 
                             // Inject dynamic options map from Python
-                            let dynamicOpts = appDataViewController.dynamicOptions
-                            if (dynamicOpts[modelData.key]) {
-                                item.options = dynamicOpts[modelData.key]
-                            } else if (modelData.options) {
-                                item.options = modelData.options // Fallback for other fields
+                            if (modelData.type === "select") {
+                                // Inject dynamic options for THIS dialog's entity (not the main table's)
+                                let dynamicOpts = appDataViewController.dynamicOptionsFor(root.entityName)
+                                if (dynamicOpts[modelData.key]) {
+                                    item.options = dynamicOpts[modelData.key]
+                                } else if (modelData.options) {
+                                    item.options = modelData.options
+                                }
                             }
 
-                            // Reactive Error Text Binding
+                            if (modelData.type === "date" || modelData.type === "datetime") {
+                                item.canAutoFill = modelData.can_auto_fill
+                            }
+
                             item.errorText = Qt.binding(function() {
                                 return root.formErrors[modelData.key] || ""
                             })
 
-                            // REACTIVE VIEW-ONLY BINDING:
-                            // Continuously watches formData. If the record updates to a rented unit, it locks instantly.
                             item.isViewOnly = Qt.binding(function() {
                                 if (modelData.key === pk) return true;
                                 if (modelData.key === "unitStatus" && root.formData["unitStatus"] === "Rented") return true;
