@@ -49,6 +49,17 @@ class QMLUtils(QObject):
         return entityNames.get(name, '')
 
     @pyqtSlot(str, result = str)
+    def renameEntityToTabName(self, name):
+        entityNames = {
+            'unit': 'Units',
+            'customer': 'Customers',
+            'rent': 'Rents',
+            'payment': 'Payments',
+            'liability': 'Liabilities'
+        }
+        return entityNames.get(name, '')
+
+    @pyqtSlot(str, result = str)
     def capitalize(self, s):
         return s.capitalize()
 

@@ -9,10 +9,8 @@ Item {
 
     // Navigate to a related entity record — switches the nav tab and opens ViewDialog
     function navigateToRecord(entityName, recordId) {
-        let name = appUtils.renameEntityName(entityName)
-        appDataViewController.reselectEntity(name)
-        let tabName = entityName.charAt(0).toUpperCase() + entityName.slice(1) + "s"
-        workspaceScreen.currentView = tabName
+        appDataViewController.reselectEntity(entityName)
+        workspaceScreen.currentView = appUtils.renameEntityToTabName(entityName)
         let record = appDataViewController.getRecordByKey(recordId)
         Qt.callLater(function() {
             viewDialog.entityName = entityName

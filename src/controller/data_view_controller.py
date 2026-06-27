@@ -400,6 +400,7 @@ class QMLDataViewController(QObject):
 
     # ── CRUD ──────────────────────────────────────────────────────────────────
 
+    @pyqtSlot(str, result='QVariantMap')
     @pyqtSlot(str, str, result='QVariantMap')
     def getRecordByKey(self, key, parent_id=''):
         return REPOSITORY_MAP[self.entity_kind].get_record(

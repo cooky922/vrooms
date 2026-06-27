@@ -75,7 +75,14 @@ Popup {
 
     // Navigate to a related Customer or Unit record
     function openRelatedRecord(fieldKey) {
-        let targetEntity = fieldKey === "customerID" ? "customer" : "unit"
+        let targetEntity = ""
+        if (fieldKey === "customerID") {
+            targetEntity = "customer"
+        } else if (fieldKey === "unitID") {
+            targetEntity = "unit"
+        } else if (fieldKey === "liabilityID") {
+            targetEntity = "liability"
+        }
         let targetId     = String(root.viewData[fieldKey] || "")
         root.close()
         Qt.callLater(function() {
@@ -161,7 +168,7 @@ Popup {
                     delegate: ColumnLayout {
                         Layout.fillWidth: true
                         z: root.currentSchema.length - index
-                        spacing: 4
+                        spacing: 2
 
                         Loader {
                             id: fieldLoader
@@ -203,21 +210,37 @@ Popup {
                         // "View Customer →" / "View Unit →" link
                         RowLayout {
                             Layout.fillWidth: true
-                            visible: root.entityName.toLowerCase() === "rent" && modelData.is_foreign_key === true
+                            visible: {
+                                return root.viewData[modelData.key] !== undefined
+                                    && (root.entityName === "rent" ||
+                                        root.entityName === "liability" ||
+                                        root.entityName === "payment") &&
+                                        modelData.is_foreign_key
+                            }
                             spacing: 0
 
                             Item { Layout.fillWidth: true }
 
                             Rectangle {
                                 width: fkLinkLabel.implicitWidth + 16
-                                height: 22; radius: 6
+                                height: 15; radius: 6
                                 color: fkLinkArea.containsMouse ? "#E0E7FF" : "#EEF2FF"
                                 Behavior on color { ColorAnimation { duration: 120 } }
 
                                 Text {
                                     id: fkLinkLabel
                                     anchors.centerIn: parent
-                                    text: "View " + (modelData.key === "customerID" ? "Customer" : "Unit") + " →"
+                                    text: {
+                                        let name = ""
+                                        if (modelData.key === "customerID") {
+                                            name = "Customer"
+                                        } else if (modelData.key === "unitID") {
+                                            name = "Unit"
+                                        } else if (modelData.key === "liabilityID") {
+                                            name = "Liability"
+                                        }
+                                        return "View " + name + " →"
+                                    }
                                     font.family: appTheme.rethinkSansFontName
                                     font.pixelSize: 10; font.bold: true
                                     color: "#4338CA"
