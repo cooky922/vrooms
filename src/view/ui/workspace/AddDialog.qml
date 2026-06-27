@@ -82,6 +82,13 @@ Popup {
         for (let i = 0; i < currentSchema.length; i++) {
             initial[currentSchema[i].key] = ""
         }
+        // initial data for status
+        if (entityName === "customer")
+            initial["customerStatus"] = "Active"
+        else if (entityName === "rent")
+            initial["rentStatus"] = "Ongoing"
+        else if (entityName === "liability")
+            initial["liabilityStatus"] = "Pending"
         formData = Object.assign(initial, prefillData)
         formErrors  = {}
         isFormValid = false
@@ -202,7 +209,9 @@ Popup {
                                         root.prefillData.hasOwnProperty(modelData.key) && 
                                         root.prefillData[modelData.key] !== "")
                             })
-                            item.isViewOnly = isPrimaryKey || isPrefilled
+
+                            let isEditableUponAdd = modelData.editable_upon_add
+                            item.isViewOnly = !isEditableUponAdd || isPrimaryKey || isPrefilled
                             if (modelData.placeholder) {
                                 item.placeholderText = modelData.placeholder
                             }
@@ -227,6 +236,34 @@ Popup {
                             })
 
                             item.inputValueChanged.connect(function(k, v) { root.setFieldValue(k, v) })
+                            
+                            // exclusively for rentFee
+                            if (modelData.key === "rentFee") {
+                                item.canAutoFill = modelData.can_auto_fill
+                                item.autoFillRequested.connect(function() {
+                                    let startStr = root.formData["rentDateTime"]
+                                    let endStr = root.formData["expectedReturnDateTime"]
+                                    let unitID = root.formData["unitID"]
+
+                                    let currentErrors = Object.assign({}, root.formErrors)
+                                    delete currentErrors["rentFee"]
+                                    root.formErrors = currentErrors
+
+                                    let result = appDataViewController.calculateRentFee(
+                                        unitID !== undefined ? unitID.toString() : "", 
+                                        startStr !== undefined ? startStr.toString() : "", 
+                                        endStr !== undefined ? endStr.toString() : ""
+                                    )
+
+                                    if (result.success) {
+                                        item.inputValueChanged("rentFee", result.fee.toFixed(2))
+                                    } else {
+                                        let errs = Object.assign({}, root.formErrors)
+                                        errs["rentFee"] = result.message
+                                        root.formErrors = errs
+                                    }
+                                })
+                            }
                         }
 
                         Binding {

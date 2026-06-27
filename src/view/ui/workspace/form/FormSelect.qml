@@ -11,6 +11,7 @@ ColumnLayout {
     property var value: ""
     property bool isViewOnly: false
     property string errorText: ""
+    property string placeholderText: "-"
 
     signal inputValueChanged(string key, var val)
 
@@ -60,7 +61,7 @@ ColumnLayout {
                 anchors.leftMargin: 12
                 anchors.rightMargin: 12
                 verticalAlignment: Text.AlignVCenter
-                text: (root.value !== undefined && root.value !== "") ? root.value : "-"
+                text: (root.value !== undefined && root.value !== "") ? root.value : root.placeholderText
                 font { pixelSize: 12; family: appTheme.rethinkSansFontName }
                 color: "#666666"
                 elide: Text.ElideRight

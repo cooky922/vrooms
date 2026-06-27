@@ -83,7 +83,7 @@ Popup {
         } else if (fieldKey === "liabilityID") {
             targetEntity = "liability"
         }
-        let targetId     = String(root.viewData[fieldKey] || "")
+        let targetId = String(root.viewData[fieldKey] || "")
         root.close()
         Qt.callLater(function() {
             workspaceScreen.navigateToRecord(targetEntity, targetId)
@@ -377,6 +377,7 @@ Popup {
                                     hoverEnabled: true
                                     onClicked: {
                                         root.close()
+                                        workspaceScreen.currentView = appUtils.renameEntityToTabName("rent")
                                         appDataViewController.reselectEntity("rent")
                                         addDialog.entityName  = "rent"
                                         addDialog.prefillData = { "customerID": root.viewData["customerID"] || "" }
@@ -544,6 +545,7 @@ Popup {
                                     hoverEnabled: true
                                     onClicked: {
                                         root.close()
+                                        workspaceScreen.currentView = appUtils.renameEntityToTabName("payment")
                                         appDataViewController.reselectEntity("payment")
                                         addDialog.entityName  = "payment"
                                         addDialog.prefillData = { "customerID": root.viewData["customerID"] || "" }
@@ -656,6 +658,7 @@ Popup {
                                     hoverEnabled: true
                                     onClicked: {
                                         root.close()
+                                        workspaceScreen.currentView = appUtils.renameEntityToTabName("liability")
                                         appDataViewController.reselectEntity("liability")
                                         addDialog.entityName  = "liability"
                                         addDialog.prefillData = { "customerID": root.viewData["customerID"] || "" }
@@ -729,6 +732,7 @@ Popup {
                          && root.viewData["unitStatus"] === "Available"
                 onClicked: {
                     root.close()
+                    workspaceScreen.currentView = appUtils.renameEntityToTabName("rent")
                     appDataViewController.reselectEntity("rent")
                     addDialog.entityName  = "rent"
                     addDialog.prefillData = { "unitID": root.viewData["unitID"] || "" }
@@ -754,6 +758,7 @@ Popup {
                 visible: root.entityName.toLowerCase() === "rent"
                 onClicked: {
                     root.close()
+                    workspaceScreen.currentView = appUtils.renameEntityToTabName("payment")
                     appDataViewController.reselectEntity("payment")
                     addDialog.entityName  = "payment"
                     addDialog.prefillData = { "customerID": root.viewData["customerID"] || "" }
@@ -768,6 +773,7 @@ Popup {
                          && root.viewData["liabilityStatus"] === "Pending"
                 onClicked: {
                     root.close()
+                    workspaceScreen.currentView = appUtils.renameEntityToTabName("payment")
                     appDataViewController.reselectEntity("payment")
                     addDialog.entityName  = "payment"
                     addDialog.prefillData = {

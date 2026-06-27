@@ -216,8 +216,12 @@ Popup {
                             })
 
                             item.isViewOnly = Qt.binding(function() {
-                                if (modelData.key === pk) return true;
-                                if (modelData.key === "unitStatus" && root.formData["unitStatus"] === "Rented") return true;
+                                if (modelData.key === pk) 
+                                    return true
+                                if (!modelData.editable_upon_update)
+                                    return true
+                                if (modelData.key === "unitStatus" && root.formData["unitStatus"] === "Rented") 
+                                    return true
                                 return false;
                             })
 

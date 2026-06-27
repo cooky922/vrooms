@@ -585,6 +585,40 @@ class QMLDataViewController(QObject):
         except Exception as e:
             return {'success': False, 'message': str(e), 'customerID': ''}
 
+    @pyqtSlot(str, str, str, result='QVariantMap')
+    def calculateRentFee(self, unit_id: str, start_str: str, end_str: str):
+        if not unit_id or not start_str or not end_str:
+            return {'success': False, 'message': 'Please fill Unit ID, Rent Date, and Expected Return Date first.'}
+            
+        # Fetch the unit record directly from the UnitRepository
+        unit = REPOSITORY_MAP[EntityKind.UNIT].get_record(unit_id)
+        
+        if not unit or unit.get('dailyRate') is None:
+            return {'success': False, 'message': 'Could not retrieve the daily rate for this unit.'}
+            
+        try:
+            # Parse QML datetime strings
+            start_dt = datetime.strptime(start_str.strip(), "%Y-%m-%d %H:%M:%S")
+            end_dt = datetime.strptime(end_str.strip(), "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            return {'success': False, 'message': 'Invalid date format detected.'}
+            
+        diff_seconds = (end_dt - start_dt).total_seconds()
+        
+        if diff_seconds < 0:
+            return {'success': False, 'message': 'Expected Return Date cannot be earlier than Rent Date.'}
+            
+        # Round up partial days
+        diff_days = math.ceil(diff_seconds / 86400.0)
+        
+        # Renting and returning on the same day counts as 1 minimum day
+        if diff_days <= 0:
+            diff_days = 1
+            
+        fee = diff_days * float(unit['dailyRate'])
+        
+        return {'success': True, 'fee': round(fee, 2)}
+
     # ── Internal ──────────────────────────────────────────────────────────────
 
     def normalizeRecord(self, data: dict) -> dict:
