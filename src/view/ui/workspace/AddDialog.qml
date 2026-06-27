@@ -16,6 +16,10 @@ Popup {
     property var formErrors: ({})
     property bool isFormValid: false
 
+    // Pre-filled values supplied by the caller (e.g. ViewDialog).
+    // Keys must match the entity's internal field names.
+    property var prefillData: ({})
+
     signal addClicked(var newData)
 
     anchors.centerIn: Overlay.overlay
@@ -209,7 +213,8 @@ Popup {
 
                             // Inject dynamic options map from Python
                             if (modelData.type === "select") {
-                                let dynamicOpts = appDataViewController.dynamicOptions
+                                // Inject dynamic options for THIS dialog's entity (not the main table's)
+                                let dynamicOpts = appDataViewController.dynamicOptionsFor(root.entityName)
                                 if (dynamicOpts[modelData.key]) {
                                     item.options = dynamicOpts[modelData.key]
                                 } else if (modelData.options) {

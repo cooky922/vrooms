@@ -22,6 +22,6 @@ class EntityKind(Enum):
     def get_parent(self):
         # Weak entities have a parent; strong entities return None
         return {
-            EntityKind.PAYMENT:   EntityKind.RENT,
-            EntityKind.LIABILITY: EntityKind.RENT,
+            EntityKind.PAYMENT:   EntityKind.CUSTOMER,
+            EntityKind.LIABILITY: EntityKind.CUSTOMER,
         }.get(self, None)
