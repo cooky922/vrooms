@@ -189,8 +189,8 @@ Item {
 
         AddDialog {
             id: addDialog
-            onAddClicked: function(data) {
-                let result = appDataViewController.addRecord(data)
+            onAddClicked: function(data, entityName) {
+                let result = appDataViewController.addRecordFor(entityName, data)
                 let didFail = !result.success
                 appToast.showToast(result.message, didFail)
             }

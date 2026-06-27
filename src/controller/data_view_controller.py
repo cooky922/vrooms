@@ -399,7 +399,6 @@ class QMLDataViewController(QObject):
         return {'isValid': is_valid, 'errors': errors}
 
     # ── CRUD ──────────────────────────────────────────────────────────────────
-
     @pyqtSlot(str, result='QVariantMap')
     @pyqtSlot(str, str, result='QVariantMap')
     def getRecordByKey(self, key, parent_id=''):
@@ -407,11 +406,23 @@ class QMLDataViewController(QObject):
             key, parent_id=parent_id if parent_id else None
         ) or {}
 
+    # Default values for system-managed fields that are hidden in the Add dialog
+    _ADD_DEFAULTS = {
+        EntityKind.UNIT:      {'unitStatus':      'Available'},
+        EntityKind.CUSTOMER:  {'customerStatus':  'Active'},
+        EntityKind.RENT:      {'rentStatus':      'Ongoing'},
+        EntityKind.LIABILITY: {'liabilityStatus': 'Pending'},
+    }
+
     @pyqtSlot('QVariantMap', result='QVariantMap')
     def addRecord(self, new_data):
         """Add using self.entity_kind (main table entity)."""
         try:
-            REPOSITORY_MAP[self.entity_kind].add_record(self.normalizeRecord(new_data))
+            data = self.normalizeRecord(new_data)
+            for k, v in self._ADD_DEFAULTS.get(self.entity_kind, {}).items():
+                if not data.get(k):
+                    data[k] = v
+            REPOSITORY_MAP[self.entity_kind].add_record(data)
             return {'success': True, 'message': 'One item added successfully.'}
         except Exception as e:
             return {'success': False, 'message': str(e)}
@@ -424,7 +435,11 @@ class QMLDataViewController(QObject):
         kind = ENTITY_KIND_MAP.get(entity_name.lower(), self.entity_kind)
         repo = REPOSITORY_MAP[kind]
         try:
-            repo.add_record(self.normalizeRecordFor(new_data, kind))
+            data = self.normalizeRecordFor(new_data, kind)
+            for k, v in self._ADD_DEFAULTS.get(kind, {}).items():
+                if not data.get(k):
+                    data[k] = v
+            repo.add_record(data)
             return {'success': True, 'message': 'One item added successfully.'}
         except Exception as e:
             return {'success': False, 'message': str(e)}

@@ -16,7 +16,7 @@ Popup {
     property var formErrors: ({})
     property bool isFormValid: false
 
-    signal addClicked(var newData)
+    signal addClicked(var newData, string entityName)
 
     anchors.centerIn: Overlay.overlay
     width: 420
@@ -259,16 +259,10 @@ Popup {
                 buttonColor: "black"
                 textColor: "#FFFFFF"
 
-                // ── Add: always uses root.entityName, not the main table's entity ──
                 onClicked: {
                     if (!enabled) return
-                    let result = appDataViewController.addRecordFor(root.entityName, root.formData)
-                    if (result.success) {
-                        root.addClicked(root.formData)
-                        root.close()
-                    } else {
-                        console.error("Add failed:", result.message)
-                    }
+                    root.addClicked(root.formData, root.entityName)
+                    root.close()
                 }
             }
         }
