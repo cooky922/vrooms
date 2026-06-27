@@ -354,6 +354,7 @@ Popup {
                                     hoverEnabled: true
                                     onClicked: {
                                         root.close()
+                                        appDataViewController.reselectEntity("rent")
                                         addDialog.entityName  = "rent"
                                         addDialog.prefillData = { "customerID": root.viewData["customerID"] || "" }
                                         addDialog.open()
@@ -520,6 +521,7 @@ Popup {
                                     hoverEnabled: true
                                     onClicked: {
                                         root.close()
+                                        appDataViewController.reselectEntity("payment")
                                         addDialog.entityName  = "payment"
                                         addDialog.prefillData = { "customerID": root.viewData["customerID"] || "" }
                                         addDialog.open()
@@ -633,6 +635,7 @@ Popup {
                                     hoverEnabled: true
                                     onClicked: {
                                         root.close()
+                                        appDataViewController.reselectEntity("liability")
                                         addDialog.entityName  = "liability"
                                         addDialog.prefillData = { "customerID": root.viewData["customerID"] || "" }
                                         addDialog.open()
@@ -705,6 +708,7 @@ Popup {
                          && root.viewData["unitStatus"] === "Available"
                 onClicked: {
                     root.close()
+                    appDataViewController.reselectEntity("rent")
                     addDialog.entityName  = "rent"
                     addDialog.prefillData = { "unitID": root.viewData["unitID"] || "" }
                     addDialog.open()
@@ -729,6 +733,7 @@ Popup {
                 visible: root.entityName.toLowerCase() === "rent"
                 onClicked: {
                     root.close()
+                    appDataViewController.reselectEntity("payment")
                     addDialog.entityName  = "payment"
                     addDialog.prefillData = { "customerID": root.viewData["customerID"] || "" }
                     addDialog.open()
@@ -742,6 +747,7 @@ Popup {
                          && root.viewData["liabilityStatus"] === "Pending"
                 onClicked: {
                     root.close()
+                    appDataViewController.reselectEntity("payment")
                     addDialog.entityName  = "payment"
                     addDialog.prefillData = {
                         "customerID":  root.viewData["customerID"]  || "",
