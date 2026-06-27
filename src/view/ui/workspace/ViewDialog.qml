@@ -286,7 +286,7 @@ Popup {
                             Text { text: root.activeRentData["rentDateTime"]   || "—"; font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; font.bold: true; color: "#78350F"; Layout.fillWidth: true; elide: Text.ElideRight }
 
                             Text { text: "Return Date";  font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; color: "#78350F"; opacity: 0.7 }
-                            Text { text: root.activeRentData["returnDateTime"] || "—"; font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; font.bold: true; color: "#78350F"; Layout.fillWidth: true; elide: Text.ElideRight }
+                            Text { text: root.activeRentData["expectedReturnDateTime"] || "—"; font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; font.bold: true; color: "#78350F"; Layout.fillWidth: true; elide: Text.ElideRight }
 
                             Text { text: "Status";       font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; color: "#78350F"; opacity: 0.7 }
                             Text { text: root.activeRentData["rentStatus"]     || "—"; font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; font.bold: true; color: "#78350F"; Layout.fillWidth: true; elide: Text.ElideRight }
@@ -548,10 +548,9 @@ Popup {
                             RowLayout {
                                 Layout.fillWidth: true
                                 spacing: 0
-                                Text { text: "ID";     font.family: appTheme.rethinkSansFontName; font.pixelSize: 10; font.bold: true; color: "#14532D"; opacity: 0.5; Layout.preferredWidth: 40 }
-                                Text { text: "Date";   font.family: appTheme.rethinkSansFontName; font.pixelSize: 10; font.bold: true; color: "#14532D"; opacity: 0.5; Layout.fillWidth: true }
-                                Text { text: "Amount"; font.family: appTheme.rethinkSansFontName; font.pixelSize: 10; font.bold: true; color: "#14532D"; opacity: 0.5; Layout.preferredWidth: 70; horizontalAlignment: Text.AlignRight }
-                                Text { text: "Method"; font.family: appTheme.rethinkSansFontName; font.pixelSize: 10; font.bold: true; color: "#14532D"; opacity: 0.5; Layout.preferredWidth: 70; horizontalAlignment: Text.AlignRight }
+                                Text { text: "ID";          font.family: appTheme.rethinkSansFontName; font.pixelSize: 10; font.bold: true; color: "#14532D"; opacity: 0.5; Layout.preferredWidth: 40 }
+                                Text { text: "Date / Time"; font.family: appTheme.rethinkSansFontName; font.pixelSize: 10; font.bold: true; color: "#14532D"; opacity: 0.5; Layout.fillWidth: true }
+                                Text { text: "Amount";      font.family: appTheme.rethinkSansFontName; font.pixelSize: 10; font.bold: true; color: "#14532D"; opacity: 0.5; Layout.preferredWidth: 80; horizontalAlignment: Text.AlignRight }
                             }
 
                             Repeater {
@@ -564,10 +563,9 @@ Popup {
                                     RowLayout {
                                         anchors { fill: parent; leftMargin: 8; rightMargin: 8 }
                                         spacing: 0
-                                        Text { text: "#" + (modelData["paymentID"] || "—");                              font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; font.bold: true; color: "#14532D"; Layout.preferredWidth: 40;                             elide: Text.ElideRight }
-                                        Text { text: modelData["paymentDate"] || "—";                                    font.family: appTheme.rethinkSansFontName; font.pixelSize: 11;                color: "#14532D"; Layout.fillWidth: true;                              elide: Text.ElideRight }
-                                        Text { text: modelData["amount"] !== undefined ? "₱" + modelData["amount"] : "—"; font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; font.bold: true; color: "#14532D"; Layout.preferredWidth: 70; horizontalAlignment: Text.AlignRight; elide: Text.ElideRight }
-                                        Text { text: modelData["paymentMethod"] || "—";                                  font.family: appTheme.rethinkSansFontName; font.pixelSize: 11;                color: "#14532D"; Layout.preferredWidth: 70; horizontalAlignment: Text.AlignRight; elide: Text.ElideRight }
+                                        Text { text: "#" + (modelData["paymentID"] || "—");                                           font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; font.bold: true; color: "#14532D"; Layout.preferredWidth: 40;                              elide: Text.ElideRight }
+                                        Text { text: modelData["paymentDateTime"] || "—";                                              font.family: appTheme.rethinkSansFontName; font.pixelSize: 11;                color: "#14532D"; Layout.fillWidth: true;                               elide: Text.ElideRight }
+                                        Text { text: modelData["paidAmount"] !== undefined ? "₱" + Number(modelData["paidAmount"]).toLocaleString(Qt.locale(), 'f', 2) : "—"; font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; font.bold: true; color: "#14532D"; Layout.preferredWidth: 80; horizontalAlignment: Text.AlignRight; elide: Text.ElideRight }
                                     }
                                 }
                             }
@@ -659,7 +657,7 @@ Popup {
                             columns: 4; columnSpacing: 8
 
                             Repeater {
-                                model: ["ID", "Date", "Amount", "Status"]
+                                model: ["ID", "Issued", "Fee (₱)", "Status"]
                                 delegate: Text {
                                     text: modelData
                                     font.family: appTheme.rethinkSansFontName
@@ -683,10 +681,10 @@ Popup {
                                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 8 }
                                     columns: 4; columnSpacing: 8
 
-                                    Text { text: "#" + (modelData["liabilityID"] || "—");                                            font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; font.bold: true; color: "#7C2D12"; Layout.fillWidth: true; elide: Text.ElideRight }
-                                    Text { text: modelData["liabilityDate"] || "—";                                                   font.family: appTheme.rethinkSansFontName; font.pixelSize: 11;                color: "#7C2D12"; Layout.fillWidth: true; elide: Text.ElideRight }
-                                    Text { text: modelData["amount"] !== undefined ? modelData["amount"] : "—";                       font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; font.bold: true; color: "#7C2D12"; Layout.fillWidth: true; elide: Text.ElideRight }
-                                    Text { text: modelData["liabilityStatus"] || "—";                                                 font.family: appTheme.rethinkSansFontName; font.pixelSize: 11;                color: "#7C2D12"; Layout.fillWidth: true; elide: Text.ElideRight }
+                                    Text { text: "#" + (modelData["liabilityID"] || "—");                                                                                    font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; font.bold: true; color: "#7C2D12"; Layout.fillWidth: true; elide: Text.ElideRight }
+                                    Text { text: modelData["issuedDateTime"] || "—";                                                                                         font.family: appTheme.rethinkSansFontName; font.pixelSize: 11;                color: "#7C2D12"; Layout.fillWidth: true; elide: Text.ElideRight }
+                                    Text { text: modelData["liabilityFee"] !== undefined ? "₱" + Number(modelData["liabilityFee"]).toLocaleString(Qt.locale(), 'f', 2) : "—"; font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; font.bold: true; color: "#7C2D12"; Layout.fillWidth: true; elide: Text.ElideRight }
+                                    Text { text: modelData["liabilityStatus"] || "—";                                                                                        font.family: appTheme.rethinkSansFontName; font.pixelSize: 11;                color: "#7C2D12"; Layout.fillWidth: true; elide: Text.ElideRight }
                                 }
                             }
                         }

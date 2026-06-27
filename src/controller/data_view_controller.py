@@ -162,6 +162,23 @@ class QMLDataViewController(QObject):
         return options_map
     # ── Slots ─────────────────────────────────────────────────────────────────
 
+    @pyqtSlot(str, result='QVariantMap')
+    def dynamicOptionsFor(self, entity_name: str):
+        """
+        Return the same options map as dynamicOptions but for any entity,
+        regardless of what entity the main table is currently showing.
+        Called by AddDialog when it is opened for a different entity
+        than the one currently selected in the workspace (e.g. opening
+        the 'rent' add-dialog while the main table shows 'unit').
+        """
+        kind = ENTITY_KIND_MAP.get(entity_name.lower(), self.entity_kind)
+        # Temporarily swap entity_kind so the shared helper works, then restore
+        saved = self.entity_kind
+        self.entity_kind = kind
+        result = self.dynamicOptions          # property reads self.entity_kind
+        self.entity_kind = saved
+        return result
+
     @pyqtSlot(str)
     def reselectEntity(self, entity_name: str):
         if self.selectedEntityName != entity_name:
@@ -313,6 +330,18 @@ class QMLDataViewController(QObject):
         kind = ENTITY_KIND_MAP.get(entity_name.lower(), self.entity_kind)
         return self._validate(initial_data, current_data, mode, kind)
 
+    # Unique fields per entity (column -> display name)
+    _UNIQUE_FIELDS = {
+        EntityKind.UNIT: {
+            'plateNumber': 'Plate Number',
+        },
+        EntityKind.CUSTOMER: {
+            'phoneNumber':     'Phone Number',
+            'emailAddress':    'Email Address',
+            'driverLicenseID': 'Driver License ID',
+        },
+    }
+
     def _validate(self, initial_data, current_data, mode, entity_kind):
         """Core validation logic, entity-kind agnostic."""
         entity_model = entity_kind.get_model()
@@ -338,22 +367,33 @@ class QMLDataViewController(QObject):
                 is_valid    = False
                 continue
 
-            # Duplicate primary-key check — never run on FK columns
-            if col != primary_key or col in fk_fields:
-                continue
+            # Duplicate primary-key check — only on the PK column, skip FK columns
+            if col == primary_key and col not in fk_fields:
+                if mode == 'edit':
+                    if str(current_data.get(primary_key)) != str(initial_data.get(primary_key)):
+                        errors[col] = (
+                            f'{entity_model.from_internal_name(primary_key).value.display_name} '
+                            f'cannot be changed.'
+                        )
+                        is_valid = False
+                else:
+                    try:
+                        repo.check_duplicate_key(val, parent_id=parent_id)
+                    except DatabaseError as e:
+                        errors[col] = e.message
+                        is_valid    = False
 
-            if mode == 'edit':
-                if str(current_data.get(primary_key)) != str(initial_data.get(primary_key)):
-                    errors[col] = (
-                        f'{entity_model.from_internal_name(primary_key).value.display_name} '
-                        f'cannot be changed.'
-                    )
-                    is_valid = False
-            else:
-                try:
-                    repo.check_duplicate_key(val, parent_id=parent_id)
-                except DatabaseError as e:
-                    errors[col] = e.message
+            # Unique field checks (non-PK columns with UNIQUE constraints)
+            unique_fields = self._UNIQUE_FIELDS.get(entity_kind, {})
+            if col in unique_fields and val:
+                exclude_id = str(initial_data.get(primary_key)) if mode == 'edit' else None
+                exists = SQLDatabase.fetch_scalar(
+                    f'SELECT COUNT(*) FROM {repo.TABLE} WHERE {col} = ?'
+                    + (f' AND {primary_key} != ?' if exclude_id else ''),
+                    (val, exclude_id) if exclude_id else (val,)
+                )
+                if exists:
+                    errors[col] = f'{unique_fields[col]} "{val}" is already registered.'
                     is_valid    = False
 
         return {'isValid': is_valid, 'errors': errors}
@@ -510,9 +550,9 @@ class QMLDataViewController(QObject):
             customer_id = rent.get('customerID') or ''
             unit_id     = rent.get('unitID') or ''
 
-            now = datetime.now().strftime('%Y-%m-%d %H:%M')
+            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             RentRepository.update_record(
-                updates={**rent, 'rentStatus': 'Returned', 'returnDateTime': now},
+                updates={**rent, 'rentStatus': 'Closed', 'actualReturnDateTime': now},
                 key=rent_id
             )
 
