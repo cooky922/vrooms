@@ -62,8 +62,9 @@ Popup {
         }
     }
 
+    // ── Validation: always uses root.entityName, not the main table's entity ──
     function validateForm() {
-        let result = appDataViewController.validateRecord({}, root.formData, "add")
+        let result = appDataViewController.validateRecordFor({}, root.formData, "add", root.entityName)
         root.formErrors = result.errors || {}
         root.isFormValid = result.isValid
     }
@@ -80,8 +81,8 @@ Popup {
         for (let i = 0; i < currentSchema.length; i++) {
             initial[currentSchema[i].key] = ""
         }
-        formData = initial
-        formErrors = {}
+        formData    = initial
+        formErrors  = {}
         isFormValid = false
     }
 
@@ -247,10 +248,16 @@ onLoaded: {
                 buttonColor: "black"
                 textColor: "#FFFFFF"
 
+                // ── Add: always uses root.entityName, not the main table's entity ──
                 onClicked: {
                     if (!enabled) return
-                    root.addClicked(root.formData)
-                    root.close()
+                    let result = appDataViewController.addRecordFor(root.entityName, root.formData)
+                    if (result.success) {
+                        root.addClicked(root.formData)
+                        root.close()
+                    } else {
+                        console.error("Add failed:", result.message)
+                    }
                 }
             }
         }

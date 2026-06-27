@@ -1,4 +1,5 @@
 import math
+from datetime import datetime
 from PyQt6.QtCore import QObject, QUrl, pyqtSlot, pyqtProperty, pyqtSignal
 from src.database import Filter, Paged, Sorted, Search, SearchMatchType, SQLDatabase
 from src.model import (
@@ -22,6 +23,14 @@ from src.model.validators import (
     RENT_STATUS_OPTIONS,
     LIABILITY_STATUS_OPTIONS
 )
+
+ENTITY_KIND_MAP = {
+    'customer':  EntityKind.CUSTOMER,
+    'unit':      EntityKind.UNIT,
+    'rent':      EntityKind.RENT,
+    'payment':   EntityKind.PAYMENT,
+    'liability': EntityKind.LIABILITY,
+}
 
 
 class QMLDataViewController(QObject):
@@ -156,14 +165,7 @@ class QMLDataViewController(QObject):
     @pyqtSlot(str)
     def reselectEntity(self, entity_name: str):
         if self.selectedEntityName != entity_name:
-            kind_map = {
-                'customer':  EntityKind.CUSTOMER,
-                'unit':      EntityKind.UNIT,
-                'rent':      EntityKind.RENT,
-                'payment':   EntityKind.PAYMENT,
-                'liability': EntityKind.LIABILITY,
-            }
-            self.entity_kind       = kind_map.get(entity_name, EntityKind.UNIT)
+            self.entity_kind       = ENTITY_KIND_MAP.get(entity_name, EntityKind.UNIT)
             self._page_index       = 0
             self._sort_field_index = 0
             self._sort_ascending   = True
@@ -298,20 +300,36 @@ class QMLDataViewController(QObject):
     def areRecordsEqual(self, old_data, new_data):
         return old_data == self.normalizeRecord(new_data)
 
+    # ── Validation ────────────────────────────────────────────────────────────
+
     @pyqtSlot('QVariantMap', 'QVariantMap', str, result='QVariantMap')
     def validateRecord(self, initial_data, current_data, mode):
-        entity_model = self.entity_kind.get_model()
-        primary_key  = self.getPrimaryKey()
-        errors       = {}
-        is_valid     = True
+        """Validate using self.entity_kind (main table entity)."""
+        return self._validate(initial_data, current_data, mode, self.entity_kind)
 
-        repo      = REPOSITORY_MAP[self.entity_kind]
+    @pyqtSlot('QVariantMap', 'QVariantMap', str, str, result='QVariantMap')
+    def validateRecordFor(self, initial_data, current_data, mode, entity_name):
+        """Validate against a specific entity regardless of what the main table shows."""
+        kind = ENTITY_KIND_MAP.get(entity_name.lower(), self.entity_kind)
+        return self._validate(initial_data, current_data, mode, kind)
+
+    def _validate(self, initial_data, current_data, mode, entity_kind):
+        """Core validation logic, entity-kind agnostic."""
+        entity_model = entity_kind.get_model()
+        repo         = REPOSITORY_MAP[entity_kind]
+        primary_key  = repo.get_primary_key()
+        fk_fields    = {repo.PARENT_FK} if repo.PARENT_FK else set()
+
+        errors    = {}
+        is_valid  = True
         parent_id = current_data.get(repo.PARENT_FK) if repo.PARENT_FK else None
 
         for col in repo.get_columns():
             if mode == 'add' and primary_key and col == primary_key:
                 continue
             val = current_data.get(col, '')
+
+            # Field-level validation (required, format, range, etc.)
             try:
                 field = entity_model.from_internal_name(col)
                 repo.validate_field(field, val)
@@ -320,12 +338,18 @@ class QMLDataViewController(QObject):
                 is_valid    = False
                 continue
 
-            if primary_key and col == primary_key:
-                if mode == 'edit':
-                    if str(current_data.get(primary_key)) != str(initial_data.get(primary_key)):
-                        errors[col] = f'{entity_model.from_internal_name(primary_key).value.display_name} cannot be changed.'
-                        is_valid    = False
-                    continue
+            # Duplicate primary-key check — never run on FK columns
+            if col != primary_key or col in fk_fields:
+                continue
+
+            if mode == 'edit':
+                if str(current_data.get(primary_key)) != str(initial_data.get(primary_key)):
+                    errors[col] = (
+                        f'{entity_model.from_internal_name(primary_key).value.display_name} '
+                        f'cannot be changed.'
+                    )
+                    is_valid = False
+            else:
                 try:
                     repo.check_duplicate_key(val, parent_id=parent_id)
                 except DatabaseError as e:
@@ -333,6 +357,8 @@ class QMLDataViewController(QObject):
                     is_valid    = False
 
         return {'isValid': is_valid, 'errors': errors}
+
+    # ── CRUD ──────────────────────────────────────────────────────────────────
 
     @pyqtSlot(str, str, result='QVariantMap')
     def getRecordByKey(self, key, parent_id=''):
@@ -342,6 +368,7 @@ class QMLDataViewController(QObject):
 
     @pyqtSlot('QVariantMap', result='QVariantMap')
     def addRecord(self, new_data):
+        """Add using self.entity_kind (main table entity)."""
         try:
             REPOSITORY_MAP[self.entity_kind].add_record(self.normalizeRecord(new_data))
             return {'success': True, 'message': 'One item added successfully.'}
@@ -350,8 +377,22 @@ class QMLDataViewController(QObject):
         finally:
             self.refreshTable()
 
+    @pyqtSlot(str, 'QVariantMap', result='QVariantMap')
+    def addRecordFor(self, entity_name: str, new_data):
+        """Add a record to the correct entity regardless of what the main table shows."""
+        kind = ENTITY_KIND_MAP.get(entity_name.lower(), self.entity_kind)
+        repo = REPOSITORY_MAP[kind]
+        try:
+            repo.add_record(self.normalizeRecordFor(new_data, kind))
+            return {'success': True, 'message': 'One item added successfully.'}
+        except Exception as e:
+            return {'success': False, 'message': str(e)}
+        finally:
+            self.refreshTable()
+
     @pyqtSlot('QVariantMap', 'QVariantMap', result='QVariantMap')
     def updateRecord(self, old_data, new_data):
+        """Update using self.entity_kind (main table entity)."""
         try:
             repo          = REPOSITORY_MAP[self.entity_kind]
             primary_key   = self.getPrimaryKey()
@@ -359,6 +400,22 @@ class QMLDataViewController(QObject):
             parent_id     = str(old_data[repo.PARENT_FK]) if repo.PARENT_FK else None
 
             repo.update_record(self.normalizeRecord(new_data), key=old_key_value, parent_id=parent_id)
+            return {'success': True, 'message': 'One item updated successfully.'}
+        except Exception as e:
+            return {'success': False, 'message': str(e)}
+        finally:
+            self.refreshTable()
+
+    @pyqtSlot(str, 'QVariantMap', 'QVariantMap', result='QVariantMap')
+    def updateRecordFor(self, entity_name: str, old_data, new_data):
+        """Update a record for the correct entity regardless of what the main table shows."""
+        kind        = ENTITY_KIND_MAP.get(entity_name.lower(), self.entity_kind)
+        repo        = REPOSITORY_MAP[kind]
+        primary_key = repo.get_primary_key()
+        try:
+            old_key_value = str(old_data[primary_key])
+            parent_id     = str(old_data[repo.PARENT_FK]) if repo.PARENT_FK else None
+            repo.update_record(self.normalizeRecordFor(new_data, kind), key=old_key_value, parent_id=parent_id)
             return {'success': True, 'message': 'One item updated successfully.'}
         except Exception as e:
             return {'success': False, 'message': str(e)}
@@ -400,16 +457,92 @@ class QMLDataViewController(QObject):
         finally:
             self.refreshTable()
 
+    # ── View dialog helpers ───────────────────────────────────────────────────
+
+    @pyqtSlot(str, result='QVariantList')
+    def getPaymentsForCustomer(self, customer_id: str):
+        if not customer_id:
+            return []
+        try:
+            return PaymentRepository.get_records(parent_id=customer_id)
+        except Exception:
+            return []
+
+    @pyqtSlot(str, result='QVariantList')
+    def getLiabilitiesForCustomer(self, customer_id: str):
+        if not customer_id:
+            return []
+        try:
+            return LiabilityRepository.get_records(parent_id=customer_id)
+        except Exception:
+            return []
+
+    @pyqtSlot(str, result='QVariantList')
+    def getRentsForCustomer(self, customer_id: str):
+        if not customer_id:
+            return []
+        try:
+            return RentRepository.get_records(
+                filter_opt=Filter.By(options={'customerID': customer_id})
+            )
+        except Exception:
+            return []
+
+    @pyqtSlot(str, result='QVariantMap')
+    def getActiveRentForUnit(self, unit_id: str):
+        if not unit_id:
+            return {}
+        try:
+            rents = RentRepository.get_records(
+                filter_opt=Filter.By(options={'unitID': unit_id, 'rentStatus': 'Ongoing'})
+            )
+            return rents[0] if rents else {}
+        except Exception:
+            return {}
+
+    @pyqtSlot(str, str, result='QVariantMap')
+    def returnUnit(self, rent_id: str, unit_status: str):
+        try:
+            rent = RentRepository.get_record(rent_id)
+            if not rent:
+                return {'success': False, 'message': f'Rent "{rent_id}" not found.', 'customerID': ''}
+
+            customer_id = rent.get('customerID') or ''
+            unit_id     = rent.get('unitID') or ''
+
+            now = datetime.now().strftime('%Y-%m-%d %H:%M')
+            RentRepository.update_record(
+                updates={**rent, 'rentStatus': 'Returned', 'returnDateTime': now},
+                key=rent_id
+            )
+
+            unit = UnitRepository.get_record(unit_id)
+            if unit:
+                UnitRepository.update_record(
+                    updates={**unit, 'unitStatus': unit_status},
+                    key=unit_id
+                )
+
+            self.refreshTable()
+            return {'success': True, 'message': 'Unit returned successfully.', 'customerID': customer_id}
+
+        except Exception as e:
+            return {'success': False, 'message': str(e), 'customerID': ''}
+
     # ── Internal ──────────────────────────────────────────────────────────────
+
     def normalizeRecord(self, data: dict) -> dict:
+        return self.normalizeRecordFor(data, self.entity_kind)
+
+    def normalizeRecordFor(self, data: dict, kind: EntityKind) -> dict:
+        repo     = REPOSITORY_MAP[kind]
         new_data = {}
-        repo     = REPOSITORY_MAP[self.entity_kind]
         for k, v in data.items():
-            if k in get_filtered_fields(return_attr = 'internal_name', type = FieldType.REAL):
+            if k in get_filtered_fields(return_attr='internal_name', type=FieldType.REAL):
                 new_data[k] = float(v) if (v is not None and v != '') else None
             elif v is None or v == '':
                 new_data[k] = None
-            elif k in get_filtered_fields(return_attr = 'internal_name', type = FieldType.FILE) and isinstance(v, QUrl):
+            elif k in get_filtered_fields(return_attr='internal_name', type=FieldType.FILE) and isinstance(v, QUrl):
                 new_data[k] = v.toLocalFile() if v.isLocalFile() else str(v)
             else:
                 new_data[k] = str(v)
