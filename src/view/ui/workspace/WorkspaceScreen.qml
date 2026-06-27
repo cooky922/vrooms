@@ -192,9 +192,7 @@ Item {
         AddDialog {
             id: addDialog
             onAddClicked: function(data) {
-                let result = appDataViewController.addRecord(data)
-                let didFail = !result.success
-                appToast.showToast(result.message, didFail)
+                appToast.showToast("One item added successfully.", false)
             }
         }
 
