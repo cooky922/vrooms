@@ -1,5 +1,6 @@
 from PyQt6.QtCore import QObject, pyqtSlot, pyqtProperty, pyqtSignal # type: ignore
 from PyQt6.QtGui import QColor # type: ignore
+from datetime import datetime
 
 class QMLUtils(QObject):
     def __init__(self, parent = None):
@@ -50,3 +51,37 @@ class QMLUtils(QObject):
     @pyqtSlot(str, result = str)
     def capitalize(self, s):
         return s.capitalize()
+
+    @pyqtSlot(str, result=str)
+    def formatDate(self, db_string):
+        """Converts 'YYYY-MM-DD' to 'YYYY Month DD' (e.g. 2027 June 5)"""
+        if not db_string or db_string.strip() == "": 
+            return ""
+        try:
+            d_str = db_string.split(" ")[0] # Safely extract just the date part
+            dt = datetime.strptime(d_str, "%Y-%m-%d")
+            return f"{dt.year} {dt.strftime('%B')} {dt.day}"
+        except Exception as e:
+            print(f"Date Parse Error: {e}")
+            return db_string # Fallback to raw string if error
+
+    @pyqtSlot(str, result=str)
+    def formatDateTime(self, db_string):
+        """Converts 'YYYY-MM-DD HH:MM:SS' to 'YYYY Month DD | h:mm:ss AM/PM'"""
+        if not db_string or db_string.strip() == "": 
+            return ""
+        try:
+            # Handle potential cases where seconds are missing
+            if db_string.count(':') == 1:
+                dt = datetime.strptime(db_string, "%Y-%m-%d %H:%M")
+            else:
+                dt = datetime.strptime(db_string, "%Y-%m-%d %H:%M:%S")
+                
+            date_part = f"{dt.year} {dt.strftime('%B')} {dt.day}"
+            # int(strftime('%I')) automatically strips the leading zero for 1-9 hours
+            time_part = f"{int(dt.strftime('%I'))}:{dt.strftime('%M:%S')} {dt.strftime('%p')}"
+            
+            return f"{date_part} | {time_part}"
+        except Exception as e:
+            print(f"DateTime Parse Error: {e}")
+            return db_string

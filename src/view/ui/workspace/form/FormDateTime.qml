@@ -1,9 +1,11 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "../../../components" as Components
 
 ColumnLayout {
     id: root
+    
     property string fieldKey: ""
     property string label: ""
     property bool isRequired: false
@@ -15,718 +17,413 @@ ColumnLayout {
     signal inputValueChanged(string key, var val)
 
     Layout.fillWidth: true
-    spacing: 6
+    spacing: 4 
 
-    //Calendar + time picker state
-    property int _selYear:   new Date().getFullYear()
-    property int _selMonth:  new Date().getMonth()
-    property int _selDay:    0
-    property int _selHour:   new Date().getHours()
-    property int _selMinute: new Date().getMinutes()
-    property int _selSecond: new Date().getSeconds()
-    property string _timeAmPm: "AM"
+    // --- State Properties ---
+    property bool _hasData: false
+    property string _selYear: ""
+    property string _selMonth: ""
+    property string _selDay: ""
+    property string _selHour: ""
+    property string _selMin: ""
+    property string _selSec: ""
+    property string _selAmPm: ""
 
-    function _applyDateTime() {
-        if (root._selDay === 0) return
-        var mm  = String(root._selMonth + 1).padStart(2, '0')
-        var dd  = String(root._selDay).padStart(2, '0')
-        var hh  = String(root._selHour).padStart(2, '0')
-        var min = String(root._selMinute).padStart(2, '0')
-        var ss  = String(root._selSecond).padStart(2, '0')
-        var str = root._selYear + "-" + mm + "-" + dd + " " + hh + ":" + min + ":" + ss
-        field.text = str
-        root.inputValueChanged(root.fieldKey, str)
+    // --- Models ---
+    property var _monthModel: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+    function formatReadableDateTime(val) {
+        if (!val) return "";
+        let parts = val.toString().split(" ");
+        if (parts.length >= 2) {
+            let dParts = parts[0].split("-");
+            let tParts = parts[1].split(":");
+            if (dParts.length === 3 && tParts.length >= 2) {
+                let mIdx = parseInt(dParts[1]) - 1;
+                let m = root._monthModel[mIdx >= 0 && mIdx < 12 ? mIdx : 0];
+                let d = parseInt(dParts[2]).toString();
+
+                let h24 = parseInt(tParts[0]);
+                let ampm = h24 >= 12 ? "PM" : "AM";
+                let h12 = h24 % 12;
+                if (h12 === 0) h12 = 12;
+
+                let min = tParts[1];
+                let sec = tParts.length === 3 ? tParts[2] : "00";
+
+                return `${dParts[0]} ${m} ${d}  ┃  ${h12}:${min}:${sec} ${ampm}`;
+            }
+        }
+        return val;
     }
 
-    function _daysInMonth(y, m) { return new Date(y, m + 1, 0).getDate() }
-    function _firstDayOfMonth(y, m) { return new Date(y, m, 1).getDay() }
-    //End calendar + time picker state
+    function checkAndEmit() {
+        if (root._selYear !== "" && root._selMonth !== "" && root._selDay !== "" &&
+            root._selHour !== "" && root._selMin !== "" && root._selSec !== "" && root._selAmPm !== "") {
+            
+            let mIdx = root._monthModel.indexOf(root._selMonth) + 1;
+            let mm = String(mIdx).padStart(2, '0');
+            
+            let h12 = parseInt(root._selHour);
+            let isPM = root._selAmPm === "PM";
+            let h24 = h12;
+            
+            if (isPM && h12 !== 12) h24 += 12;
+            if (!isPM && h12 === 12) h24 = 0;
+            
+            let hh = String(h24).padStart(2, '0');
+            let str = `${root._selYear}-${mm}-${root._selDay} ${hh}:${root._selMin}:${root._selSec}`;
+            
+            root.inputValueChanged(root.fieldKey, str);
+        }
+    }
 
+    onValueChanged: {
+        if (root.isViewOnly) return;
+        
+        if (!value) {
+            root._hasData = false;
+            root._selYear = ""; root._selMonth = ""; root._selDay = "";
+            root._selHour = ""; root._selMin = ""; root._selSec = ""; root._selAmPm = "";
+            return;
+        }
+        
+        if (value.length >= 19) {
+            let dtParts = value.toString().split(" ");
+            let dParts = dtParts[0].split("-");
+            let tParts = dtParts[1].split(":");
+            
+            if (dParts.length === 3 && tParts.length === 3) {
+                root._selYear = dParts[0];
+                root._selMonth = root._monthModel[parseInt(dParts[1]) - 1];
+                root._selDay = dParts[2];
+                
+                let h24 = parseInt(tParts[0]);
+                root._selAmPm = h24 >= 12 ? "PM" : "AM";
+                let h12 = h24 % 12;
+                if (h12 === 0) h12 = 12;
+                
+                root._selHour = String(h12).padStart(2, '0');
+                root._selMin = tParts[1];
+                root._selSec = tParts[2];
+                
+                root._hasData = true;
+            }
+        }
+    }
+
+    onIsViewOnlyChanged: {
+        if (!isViewOnly && value && value.length >= 19) {
+            let dtParts = value.toString().split(" ");
+            let dParts = dtParts[0].split("-");
+            let tParts = dtParts[1].split(":");
+            if (dParts.length === 3 && tParts.length === 3) {
+                root._selYear = dParts[0];
+                root._selMonth = root._monthModel[parseInt(dParts[1]) - 1];
+                root._selDay = dParts[2];
+                
+                let h24 = parseInt(tParts[0]);
+                root._selAmPm = h24 >= 12 ? "PM" : "AM";
+                let h12 = h24 % 12;
+                if (h12 === 0) h12 = 12;
+                
+                root._selHour = String(h12).padStart(2, '0');
+                root._selMin = tParts[1];
+                root._selSec = tParts[2];
+                
+                root._hasData = true;
+            }
+        }
+    }
+
+    component AggregatedChip: Rectangle {
+        id: chip
+        property string text: ""
+        signal clicked()
+
+        Layout.preferredHeight: 20
+        Layout.preferredWidth: contentText.implicitWidth + 20
+        Layout.alignment: Qt.AlignVCenter
+        radius: 12
+        color: ma.containsMouse ? "#D1D5DB" : "#E5E7EB"
+        
+        transform: Translate {
+            y: ma.containsMouse ? -1 : 0
+            Behavior on y { NumberAnimation { duration: 100 } }
+        }
+
+        Text {
+            id: contentText
+            anchors.centerIn: parent
+            text: chip.text
+            color: "#111827"
+            font.pixelSize: 11
+            font.bold: true
+            font.family: typeof appTheme !== "undefined" ? appTheme.rethinkSansFontName : "sans-serif"
+        }
+
+        MouseArea {
+            id: ma
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: {
+                field.forceActiveFocus()
+                chip.clicked()
+            }
+        }
+    }
+
+    // --- UI ---
     Text {
         text: root.label + (root.isRequired ? " <font color='#E53935'>*</font>" : "")
         textFormat: Text.RichText
-        font { pixelSize: 13; family: appTheme.inclusiveSansFontName }
-        color: "#333"
+        font.pixelSize: 13 
+        font.family: typeof appTheme !== "undefined" ? appTheme.inclusiveSansFontName : "sans-serif"
+        color: "#333333"
     }
 
-    TextField {
+    // Main Container Pill
+    Rectangle {
         id: field
+        focus: true
         Layout.fillWidth: true
-        Layout.preferredHeight: 30
-        placeholderText: root.isViewOnly ? "-" : root.placeholderText
-        leftPadding: 12
-        rightPadding: (!root.isViewOnly && field.text === "") ? nowBtn.width + 12 : 56
-        font { pixelSize: 12; family: appTheme.rethinkSansFontName }
+        Layout.preferredHeight: 32
+        radius: 16
+        color: root.isViewOnly ? "#EEEEEE" : "transparent"
         
-        readOnly: root.isViewOnly
-        color: root.isViewOnly ? "#666666" : "#333"
-        placeholderTextColor: "#AAAAAA"
-        
-        text: root.value !== undefined ? root.value : ""
-        onTextEdited: root.inputValueChanged(root.fieldKey, text)
-
-        background: Rectangle {
-            radius: 15
-            color: root.isViewOnly ? "#EEEEEE" : "transparent"
-            border.color: root.isViewOnly ? "transparent" : (field.activeFocus ? appTheme.activeColor : "#888888")
-            border.width: field.activeFocus && !root.isViewOnly ? 2 : (root.isViewOnly ? 0 : 0.75)
+        border {
+            color: root.isViewOnly ? "transparent" : (root.errorText !== "" ? "#E53935" : (field.activeFocus ? appTheme.activeColor : "#888888"))
+            width: field.activeFocus && !root.isViewOnly ? 2 : (root.isViewOnly ? 0 : 0.75)
         }
 
-        HoverHandler { 
-            id: hover 
-        }
-        
-        transform: Translate { 
-            y: (hover.hovered && !root.isViewOnly) ? -2 : 0
-            Behavior on y { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } } 
+        HoverHandler {
+            id: fieldHover
+            cursorShape: root.isViewOnly ? Qt.ArrowCursor : Qt.PointingHandCursor
         }
 
-        Rectangle {
-            id: nowBtn
-            visible: !root.isViewOnly && field.text === ""
-            anchors.right: parent.right
-            anchors.rightMargin: 6
-            anchors.verticalCenter: parent.verticalCenter
-            height: 24
-            width: nowRow.implicitWidth + 16
-            radius: 12
-            color: nowMouseArea.containsMouse ? "#E5E7EB" : "transparent"
+        MouseArea {
+            anchors.fill: parent
+            visible: !root.isViewOnly
+            onClicked: field.forceActiveFocus()
+            propagateComposedEvents: true 
+        }
+
+        transform: Translate {
+            y: fieldHover.hovered && !root.isViewOnly ? -2 : 0
+            Behavior on y { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+        }
+
+        Text {
+            visible: root.isViewOnly
+            anchors.fill: parent
+            anchors.leftMargin: 12
+            verticalAlignment: Text.AlignVCenter
+            font.pixelSize: 12
+            font.family: typeof appTheme !== "undefined" ? appTheme.rethinkSansFontName : "sans-serif"
             
-            Row {
-                id: nowRow
-                anchors.centerIn: parent
-                spacing: 4
-                
-                Image { 
-                    source: "../../../../../assets/icons/calendar.svg"
-                    sourceSize: Qt.size(12, 12)
-                    opacity: 1.0
-                    anchors.verticalCenter: parent.verticalCenter 
-                }
-                
-                Text { 
-                    text: "Now"
-                    font { pixelSize: 11; family: appTheme.rethinkSansFontName }
-                    color: "#555"
-                    anchors.verticalCenter: parent.verticalCenter 
-                }
-            }
-
-            MouseArea {
-                id: nowMouseArea
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                preventStealing: true
-                
-                onClicked: (mouse) => {
-                    var d = Qt.formatDateTime(new Date(), "yyyy-MM-dd HH:mm:ss")
-                    field.text = d
-                    root.inputValueChanged(root.fieldKey, d)
-                    mouse.accepted = true
-                }
+            color: (!root.value || root.value.toString().trim() === "") ? "#9CA3AF" : "#666666"
+            text: {
+                if (!root.value || root.value.toString().trim() === "") return "N/A";
+                return typeof appUtils !== "undefined" ? appUtils.formatDateTime(root.value) : root.value;
             }
         }
 
-        // Clear button
-        Rectangle {
-            visible: !root.isViewOnly && field.text !== ""
-            width: 20
-            height: 20
-            radius: 10
-            anchors.right: parent.right
-            anchors.rightMargin: 8
-            anchors.verticalCenter: parent.verticalCenter
-            color: clearMouseArea.containsMouse ? "#E5E7EB" : "transparent"
-            
-            Image { 
-                anchors.centerIn: parent
-                source: "../../../../../assets/icons/close.svg"
-                sourceSize: Qt.size(12, 12)
-                opacity: 1.0
-            }
-            
-            MouseArea {
-                id: clearMouseArea
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                preventStealing: true
-                
-                onClicked: (mouse) => {
-                    field.text = ""
-                    root.inputValueChanged(root.fieldKey, "")
-                    mouse.accepted = true
-                }
-            }
-        }
+        Loader {
+            active: !root.isViewOnly
+            anchors.fill: parent
+            sourceComponent: Component {
+                Item {
+                    anchors.fill: parent
 
-        // Calendar picker icon
-        Rectangle {
-            visible: !root.isViewOnly && field.text !== ""
-            width: 20
-            height: 20
-            radius: 10
-            anchors.right: parent.right
-            anchors.rightMargin: 32
-            anchors.verticalCenter: parent.verticalCenter
-            color: openDTArea.containsMouse ? "#E5E7EB" : "transparent"
-
-            Image {
-                anchors.centerIn: parent
-                source: "../../../../../assets/icons/calendar.svg"
-                sourceSize: Qt.size(12, 12)
-                opacity: 0.7
-            }
-
-            MouseArea {
-                id: openDTArea
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                preventStealing: true
-
-                onClicked: (mouse) => {
-                    var parts = field.text.split(" ")
-                    if (parts.length === 2) {
-                        var d = parts[0].split("-")
-                        var t = parts[1].split(":")
-                        if (d.length === 3) {
-                            root._selYear  = parseInt(d[0])
-                            root._selMonth = parseInt(d[1]) - 1
-                            root._selDay   = parseInt(d[2])
-                        }
-                        if (t.length === 3) {
-                            root._selHour   = parseInt(t[0])
-                            root._selMinute = parseInt(t[1])
-                            root._selSecond = parseInt(t[2])
-                        }
-                    }
-                    dtPopup.open()
-                    mouse.accepted = true
-                }
-            }
-        }
-
-        // Time picker icon — "T" label, same pattern as calendar icon
-        Rectangle {
-            visible: !root.isViewOnly && field.text !== ""
-            width: 20
-            height: 20
-            radius: 10
-            anchors.right: parent.right
-            anchors.rightMargin: 56
-            anchors.verticalCenter: parent.verticalCenter
-            color: openTimeArea.containsMouse ? "#E5E7EB" : "transparent"
-            border.color: "#888888"
-            border.width: 0.75
-
-            Text {
-                anchors.centerIn: parent
-                text: "T"
-                font { pixelSize: 11; bold: true; family: appTheme.rethinkSansFontName }
-                color: "#555"
-            }
-
-            MouseArea {
-                id: openTimeArea
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                preventStealing: true
-
-                onClicked: (mouse) => {
-                    var parts = field.text.split(" ")
-                    if (parts.length === 2) {
-                        var t = parts[1].split(":")
-                        if (t.length === 3) {
-                            var h = parseInt(t[0])
-                            root._selMinute = parseInt(t[1])
-                            root._selSecond = parseInt(t[2])
-                            if (h === 0)       { root._timeAmPm = "AM"; root._selHour = 12 }
-                            else if (h < 12)   { root._timeAmPm = "AM"; root._selHour = h  }
-                            else if (h === 12) { root._timeAmPm = "PM"; root._selHour = 12 }
-                            else               { root._timeAmPm = "PM"; root._selHour = h - 12 }
-                        }
-                    }
-                    timePopup.open()
-                    mouse.accepted = true
-                }
-            }
-        }
-        // End icons
-    }
-
-    //DateTime Popup
-    Popup {
-        id: dtPopup
-        width: 280
-        modal: true                                      
-        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-        parent: Overlay.overlay                            
-        x: Math.round((parent.width - width) / 2)         
-        y: Math.round((parent.height - height) / 2)       
-
-        Overlay.modal: Rectangle {                         
-            color: "#66000000"
-        }
-
-        background: Rectangle {
-            color: "#FFFFFF"
-            radius: 12
-            border.color: "#E0E0E0"
-            border.width: 1
-        }
-
-        enter: Transition {
-            NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 150 }
-            NumberAnimation { property: "scale"; from: 0.95; to: 1.0; duration: 150; easing.type: Easing.OutQuad }
-        }
-        exit: Transition {
-            NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 100 }
-        }
-
-        ColumnLayout {
-            width: parent.width
-            spacing: 8
-
-            // Month / Year navigation
-            RowLayout {
-                Layout.fillWidth: true
-
-                Rectangle {
-                    width: 28; height: 28; radius: 14
-                    color: prevDT.containsMouse ? "#F0F0F0" : "transparent"
-                    Text { anchors.centerIn: parent; text: "‹"; font.pixelSize: 18; color: "#333" }
-                    MouseArea {
-                        id: prevDT
+                    // Empty State (No Data)
+                    RowLayout {
                         anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            if (root._selMonth === 0) { root._selMonth = 11; root._selYear-- }
-                            else root._selMonth--
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 8
+                        spacing: 8
+                        visible: !root._hasData
+
+                        // Placeholder doubles as popup trigger
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: root.placeholderText
+                                font.pixelSize: 11
+                                font.family: typeof appTheme !== "undefined" ? appTheme.rethinkSansFontName : "sans-serif"
+                                color: maPlaceholder.containsMouse ? "#6B7280" : "#AAAAAA"
+                            }
+
+                            MouseArea {
+                                id: maPlaceholder
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    field.forceActiveFocus()
+                                    calLoader.active = true
+                                }
+                            }
+                        }
+
+                        // Now Button
+                        Rectangle {
+                            Layout.preferredWidth: 60
+                            Layout.preferredHeight: 24
+                            radius: 12
+                            color: nowMouseArea.containsMouse ? "#E5E7EB" : "transparent"
+                            
+                            RowLayout {
+                                anchors.centerIn: parent
+                                spacing: 4
+                                Image { source: "../../../../../assets/icons/clock.svg"; sourceSize: Qt.size(12, 12); opacity: 1.0 }
+                                Text { text: "Now"; font.pixelSize: 10; font.family: typeof appTheme !== "undefined" ? appTheme.rethinkSansFontName : "sans-serif"; color: "#555555" }
+                            }
+                            MouseArea {
+                                id: nowMouseArea
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    field.forceActiveFocus()
+                                    var d = new Date()
+                                    root._hasData = true
+                                    root._selYear = d.getFullYear().toString()
+                                    root._selMonth = root._monthModel[d.getMonth()]
+                                    root._selDay = String(d.getDate()).padStart(2, '0')
+                                    
+                                    let h = d.getHours()
+                                    root._selAmPm = h >= 12 ? "PM" : "AM"
+                                    let h12 = h % 12; if (h12 === 0) h12 = 12;
+                                    
+                                    root._selHour = String(h12).padStart(2, '0')
+                                    root._selMin = String(d.getMinutes()).padStart(2, '0')
+                                    root._selSec = String(d.getSeconds()).padStart(2, '0')
+                                    
+                                    root.checkAndEmit()
+                                }
+                            }
                         }
                     }
-                }
 
-                Text {
-                    Layout.fillWidth: true
-                    horizontalAlignment: Text.AlignHCenter
-                    text: Qt.locale().monthName(root._selMonth) + " " + root._selYear
-                    font { pixelSize: 13; bold: true; family: appTheme.inclusiveSansFontName }
-                    color: "#1A1A1A"
-                }
-
-                Rectangle {
-                    width: 28; height: 28; radius: 14
-                    color: nextDT.containsMouse ? "#F0F0F0" : "transparent"
-                    Text { anchors.centerIn: parent; text: "›"; font.pixelSize: 18; color: "#333" }
-                    MouseArea {
-                        id: nextDT
+                    // Filled State (Has Data)
+                    RowLayout {
                         anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            if (root._selMonth === 11) { root._selMonth = 0; root._selYear++ }
-                            else root._selMonth++
-                        }
-                    }
-                }
-            }
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 8
+                        spacing: 4
+                        visible: root._hasData
 
-            // Day-of-week headers
-            Grid {
-                columns: 7
-                Layout.fillWidth: true
-                spacing: 2
-
-                Repeater {
-                    model: ["Su","Mo","Tu","We","Th","Fr","Sa"]
-                    Text {
-                        width: 34; height: 24
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                        text: modelData
-                        font { pixelSize: 10; family: appTheme.rethinkSansFontName }
-                        color: "#999"
-                    }
-                }
-
-                // Blank offset cells for the first day of the month
-                Repeater {
-                    model: root._firstDayOfMonth(root._selYear, root._selMonth)
-                    Item { width: 34; height: 34 }
-                }
-
-                // Day cells
-                Repeater {
-                    model: root._daysInMonth(root._selYear, root._selMonth)
-
-                    Rectangle {
-                        width: 34; height: 34; radius: 17
-                        property int dayNum: index + 1
-                        property bool isSelected: root._selDay === dayNum
-                        property bool isToday: {
-                            var t = new Date()
-                            return t.getFullYear() === root._selYear &&
-                                   t.getMonth() === root._selMonth &&
-                                   t.getDate() === dayNum
-                        }
-                        color: isSelected ? "#1A1A1A" : (dayHoverDT.containsMouse ? "#F0F0F0" : "transparent")
-                        border.color: isToday && !isSelected ? "#AAAAAA" : "transparent"
-                        border.width: 1
-                        Behavior on color { ColorAnimation { duration: 80 } }
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: parent.dayNum
-                            font { pixelSize: 12; family: appTheme.rethinkSansFontName }
-                            color: parent.isSelected ? "#FFFFFF" : "#1A1A1A"
+                        // -- DATE BLOCK --
+                        AggregatedChip {
+                            text: `${root._selYear} ${root._selMonth} ${root._selDay}`
+                            onClicked: calLoader.active = true
                         }
 
-                        MouseArea {
-                            id: dayHoverDT
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                root._selDay = parent.dayNum
-                                root._applyDateTime()
+                        // Separator
+                        Rectangle {
+                            width: 2; height: 16; radius: 1
+                            color: "#D1D5DB"
+                            Layout.leftMargin: 4; Layout.rightMargin: 4
+                        }
+
+                        // -- TIME BLOCK --
+                        AggregatedChip {
+                            text: `${root._selHour}:${root._selMin}:${root._selSec} ${root._selAmPm}`
+                            onClicked: timeLoader.active = true
+                        }
+
+                        Item { Layout.fillWidth: true }
+
+                        // Clear Icon (Always Rightmost)
+                        Rectangle {
+                            width: 24; height: 24; radius: 12
+                            color: clearMouseArea.containsMouse ? "#E5E7EB" : "transparent"
+                            Image { anchors.centerIn: parent; source: "../../../../../assets/icons/close.svg"; sourceSize: Qt.size(12, 12); opacity: 1.0 }
+                            MouseArea {
+                                id: clearMouseArea
+                                anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    field.forceActiveFocus()
+                                    root._hasData = false
+                                    root._selYear = ""; root._selMonth = ""; root._selDay = ""
+                                    root._selHour = ""; root._selMin = ""; root._selSec = ""; root._selAmPm = ""
+                                    root.inputValueChanged(root.fieldKey, "")
+                                }
                             }
                         }
                     }
                 }
             }
+        }
+    }
 
-            // Divider
-            Rectangle { Layout.fillWidth: true; height: 1; color: "#EEEEEE" }
-
-            // Time
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.leftMargin: 8
-                Layout.rightMargin: 8
-                Layout.bottomMargin: 4
-
-                Text {
-                    text: "Time:"
-                    font { pixelSize: 11; family: appTheme.rethinkSansFontName }
-                    color: "#888"
-                }
-
-                Text {
-                    Layout.fillWidth: true
-                    text: {
-                        var hh  = String(root._selHour).padStart(2, '0')
-                        var min = String(root._selMinute).padStart(2, '0')
-                        var ss  = String(root._selSecond).padStart(2, '0')
-                        return hh + ":" + min + ":" + ss
+    Loader {
+        id: calLoader
+        active: false
+        sourceComponent: Component {
+            CalendarPopup {
+                Component.onCompleted: {
+                    if (root._selYear !== "") {
+                        selYear = parseInt(root._selYear)
+                        selMonth = root._monthModel.indexOf(root._selMonth)
+                        selDay = parseInt(root._selDay)
                     }
-                    font { pixelSize: 11; family: appTheme.rethinkSansFontName }
-                    color: "#333"
-                    horizontalAlignment: Text.AlignHCenter
+                    open()
                 }
-
-                Rectangle {
-                    width: 60; height: 24; radius: 12
-                    color: editTimeBtn.containsMouse ? "#1A1A1A" : "#333333"
-                    Text {
-                        anchors.centerIn: parent
-                        text: "Edit Time"
-                        font { pixelSize: 10; family: appTheme.rethinkSansFontName }
-                        color: "#FFFFFF"
+                onDateSelected: function(year, month, day) {
+                    root._selYear = year.toString()
+                    root._selMonth = root._monthModel[month]
+                    root._selDay = String(day).padStart(2, '0')
+                    
+                    if (root._selHour === "") {
+                        root._selHour = "12"; root._selMin = "00"; root._selSec = "00"; root._selAmPm = "AM"
                     }
-                    MouseArea {
-                        id: editTimeBtn
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            var h = root._selHour
-                            if (h === 0)       { root._timeAmPm = "AM"; root._selHour = 12 }
-                            else if (h < 12)   { root._timeAmPm = "AM" }
-                            else if (h === 12) { root._timeAmPm = "PM" }
-                            else               { root._timeAmPm = "PM"; root._selHour = h - 12 }
-                            dtPopup.close()
-                            Qt.callLater(function() { timePopup.open() })
-                        }
-                    }
+                    root._hasData = true
+                    root.checkAndEmit()
                 }
+                onClosed: calLoader.active = false
             }
         }
     }
 
-    // Time Popup
-    Popup {
-        id: timePopup
-        width: 260
-        modal: true
-        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-        parent: Overlay.overlay
-        x: Math.round((parent.width - width) / 2)
-        y: Math.round((parent.height - height) / 2)
-
-        Overlay.modal: Rectangle { color: "#66000000" }
-
-        background: Rectangle {
-            color: "#FFFFFF"; radius: 12
-            border.color: "#E0E0E0"; border.width: 1
-        }
-
-        enter: Transition {
-            NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 150 }
-            NumberAnimation { property: "scale"; from: 0.95; to: 1.0; duration: 150; easing.type: Easing.OutQuad }
-        }
-        exit: Transition {
-            NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 100 }
-        }
-
-        ColumnLayout {
-            width: parent.width
-            spacing: 10
-
-            Text {
-                Layout.alignment: Qt.AlignHCenter
-                text: "Time"
-                font { pixelSize: 14; bold: true; family: appTheme.inclusiveSansFontName }
-                color: "#1A1A1A"
-            }
-
-            Rectangle { Layout.fillWidth: true; height: 1; color: "#EEEEEE" }
-
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.leftMargin: 8
-                Layout.rightMargin: 8
-                spacing: 4
-
-                // Hour
-                ColumnLayout {
-                    Layout.fillWidth: true; spacing: 4
-                    Rectangle {
-                        Layout.alignment: Qt.AlignHCenter
-                        width: 44; height: 32; radius: 8
-                        color: hourUpArea.containsMouse ? "#F0F0F0" : "#FAFAFA"
-                        border.color: "#E0E0E0"; border.width: 1
-                        Text { anchors.centerIn: parent; text: "∧"; font.pixelSize: 14; color: "#555" }
-                        MouseArea {
-                            id: hourUpArea
-                            anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                            onClicked: root._selHour = (root._selHour % 12) + 1
-                        }
+    // --- Lazy Loaded Clock Popup ---
+    Loader {
+        id: timeLoader
+        active: false
+        sourceComponent: Component {
+            ClockPopup {
+                Component.onCompleted: {
+                    if (root._selHour !== "") {
+                        timeAmPm = root._selAmPm
+                        selHour = parseInt(root._selHour)
+                        selMinute = parseInt(root._selMin)
+                        selSecond = parseInt(root._selSec)
                     }
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: String(root._selHour).padStart(2, '0')
-                        font { pixelSize: 22; bold: true; family: appTheme.rethinkSansFontName }
-                        color: "#1A1A1A"
-                    }
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter; text: "hour"
-                        font { pixelSize: 10; family: appTheme.rethinkSansFontName }
-                        color: "#999"
-                    }
-                    Rectangle {
-                        Layout.alignment: Qt.AlignHCenter
-                        width: 44; height: 32; radius: 8
-                        color: hourDownArea.containsMouse ? "#F0F0F0" : "#FAFAFA"
-                        border.color: "#E0E0E0"; border.width: 1
-                        Text { anchors.centerIn: parent; text: "∨"; font.pixelSize: 14; color: "#555" }
-                        MouseArea {
-                            id: hourDownArea
-                            anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                            onClicked: root._selHour = root._selHour === 1 ? 12 : root._selHour - 1
-                        }
-                    }
+                    open()
                 }
-
-                Text { 
-                    text: ":"
-                    font { pixelSize: 20; bold: true }
-                    color: "#CCCCCC"; Layout.alignment: Qt.AlignVCenter; bottomPadding: 20 
+                onTimeSelected: function(h24, min, sec) {
+                    root._selAmPm = h24 >= 12 ? "PM" : "AM"
+                    let h12 = h24 % 12
+                    if (h12 === 0) h12 = 12
+                    
+                    root._selHour = String(h12).padStart(2, '0')
+                    root._selMin = String(min).padStart(2, '0')
+                    root._selSec = String(sec).padStart(2, '0')
+                    
+                    if (root._selYear === "") {
+                        var d = new Date()
+                        root._selYear = d.getFullYear().toString()
+                        root._selMonth = root._monthModel[d.getMonth()]
+                        root._selDay = String(d.getDate()).padStart(2, '0')
+                    }
+                    root._hasData = true
+                    root.checkAndEmit()
                 }
-
-                // Minute
-                ColumnLayout {
-                    Layout.fillWidth: true; spacing: 4
-                    Rectangle {
-                        Layout.alignment: Qt.AlignHCenter
-                        width: 44; height: 32; radius: 8
-                        color: minUpArea.containsMouse ? "#F0F0F0" : "#FAFAFA"
-                        border.color: "#E0E0E0"; border.width: 1
-                        Text { anchors.centerIn: parent; text: "∧"; font.pixelSize: 14; color: "#555" }
-                        MouseArea {
-                            id: minUpArea
-                            anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                            onClicked: root._selMinute = (root._selMinute + 1) % 60
-                        }
-                    }
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: String(root._selMinute).padStart(2, '0')
-                        font { pixelSize: 22; bold: true; family: appTheme.rethinkSansFontName }
-                        color: "#1A1A1A"
-                    }
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter; text: "min"
-                        font { pixelSize: 10; family: appTheme.rethinkSansFontName }
-                        color: "#999"
-                    }
-                    Rectangle {
-                        Layout.alignment: Qt.AlignHCenter
-                        width: 44; height: 32; radius: 8
-                        color: minDownArea.containsMouse ? "#F0F0F0" : "#FAFAFA"
-                        border.color: "#E0E0E0"; border.width: 1
-                        Text { anchors.centerIn: parent; text: "∨"; font.pixelSize: 14; color: "#555" }
-                        MouseArea {
-                            id: minDownArea
-                            anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                            onClicked: root._selMinute = root._selMinute === 0 ? 59 : root._selMinute - 1
-                        }
-                    }
-                }
-
-                Text { 
-                    text: ":"
-                    font { pixelSize: 20; bold: true }
-                    color: "#CCCCCC"; Layout.alignment: Qt.AlignVCenter; bottomPadding: 20 
-                }
-
-                // Second
-                ColumnLayout {
-                    Layout.fillWidth: true; spacing: 4
-                    Rectangle {
-                        Layout.alignment: Qt.AlignHCenter
-                        width: 44; height: 32; radius: 8
-                        color: secUpArea.containsMouse ? "#F0F0F0" : "#FAFAFA"
-                        border.color: "#E0E0E0"; border.width: 1
-                        Text { anchors.centerIn: parent; text: "∧"; font.pixelSize: 14; color: "#555" }
-                        MouseArea {
-                            id: secUpArea
-                            anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                            onClicked: root._selSecond = (root._selSecond + 1) % 60
-                        }
-                    }
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: String(root._selSecond).padStart(2, '0')
-                        font { pixelSize: 22; bold: true; family: appTheme.rethinkSansFontName }
-                        color: "#1A1A1A"
-                    }
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter; text: "sec"
-                        font { pixelSize: 10; family: appTheme.rethinkSansFontName }
-                        color: "#999"
-                    }
-                    Rectangle {
-                        Layout.alignment: Qt.AlignHCenter
-                        width: 44; height: 32; radius: 8
-                        color: secDownArea.containsMouse ? "#F0F0F0" : "#FAFAFA"
-                        border.color: "#E0E0E0"; border.width: 1
-                        Text { anchors.centerIn: parent; text: "∨"; font.pixelSize: 14; color: "#555" }
-                        MouseArea {
-                            id: secDownArea
-                            anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                            onClicked: root._selSecond = root._selSecond === 0 ? 59 : root._selSecond - 1
-                        }
-                    }
-                }
-            }
-
-            // AM / PM
-            RowLayout {
-                Layout.alignment: Qt.AlignHCenter
-                spacing: 4
-                Rectangle {
-                    width: 56; height: 30; radius: 8
-                    color: root._timeAmPm === "AM" ? "#1A1A1A" : (amArea.containsMouse ? "#F0F0F0" : "#FAFAFA")
-                    border.color: "#E0E0E0"; border.width: 1
-                    Text {
-                        anchors.centerIn: parent; text: "AM"
-                        font { pixelSize: 12; bold: root._timeAmPm === "AM"; family: appTheme.rethinkSansFontName }
-                        color: root._timeAmPm === "AM" ? "#FFFFFF" : "#555"
-                    }
-                    MouseArea {
-                        id: amArea
-                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                        onClicked: root._timeAmPm = "AM"
-                    }
-                }
-                Rectangle {
-                    width: 56; height: 30; radius: 8
-                    color: root._timeAmPm === "PM" ? "#1A1A1A" : (pmArea.containsMouse ? "#F0F0F0" : "#FAFAFA")
-                    border.color: "#E0E0E0"; border.width: 1
-                    Text {
-                        anchors.centerIn: parent; text: "PM"
-                        font { pixelSize: 12; bold: root._timeAmPm === "PM"; family: appTheme.rethinkSansFontName }
-                        color: root._timeAmPm === "PM" ? "#FFFFFF" : "#555"
-                    }
-                    MouseArea {
-                        id: pmArea
-                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                        onClicked: root._timeAmPm = "PM"
-                    }
-                }
-            }
-
-            // Preview
-            Text {
-                Layout.alignment: Qt.AlignHCenter
-                text: {
-                    var h = String(root._selHour).padStart(2, '0')
-                    var m = String(root._selMinute).padStart(2, '0')
-                    var s = String(root._selSecond).padStart(2, '0')
-                    return h + " : " + m + " : " + s + " " + root._timeAmPm
-                }
-                font { pixelSize: 12; family: appTheme.rethinkSansFontName }
-                color: "#555"
-            }
-
-            Rectangle { Layout.fillWidth: true; height: 1; color: "#EEEEEE" }
-
-            // OK
-            Rectangle {
-                Layout.fillWidth: true; height: 38; radius: 8
-                color: okTimeArea.containsMouse ? "#2563EB" : "#3B82F6"
-                Text {
-                    anchors.centerIn: parent; text: "OK"
-                    font { pixelSize: 13; bold: true; family: appTheme.rethinkSansFontName }
-                    color: "#FFFFFF"
-                }
-                MouseArea {
-                    id: okTimeArea
-                    anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        var h24 = root._selHour
-                        if (root._timeAmPm === "AM") { if (h24 === 12) h24 = 0 }
-                        else { if (h24 !== 12) h24 += 12 }
-                        root._selHour = h24
-                        root._applyDateTime()
-                        if (h24 === 0)       { root._timeAmPm = "AM"; root._selHour = 12 }
-                        else if (h24 < 12)   { root._timeAmPm = "AM"; root._selHour = h24 }
-                        else if (h24 === 12) { root._timeAmPm = "PM"; root._selHour = 12 }
-                        else                 { root._timeAmPm = "PM"; root._selHour = h24 - 12 }
-                        timePopup.close()
-                    }
-                }
-            }
-
-            // Cancel
-            Rectangle {
-                Layout.fillWidth: true; height: 38; radius: 8
-                color: cancelTimeArea.containsMouse ? "#F5F5F5" : "transparent"
-                border.color: "#E0E0E0"; border.width: 1
-                Text {
-                    anchors.centerIn: parent; text: "Cancel"
-                    font { pixelSize: 13; family: appTheme.rethinkSansFontName }
-                    color: "#555"
-                }
-                MouseArea {
-                    id: cancelTimeArea
-                    anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                    onClicked: timePopup.close()
-                }
+                onClosed: timeLoader.active = false
             }
         }
     }
