@@ -175,7 +175,7 @@ class QMLDataViewController(QObject):
         # Temporarily swap entity_kind so the shared helper works, then restore
         saved = self.entity_kind
         self.entity_kind = kind
-        result = self.dynamicOptions()
+        result = self.dynamicOptions
         self.entity_kind = saved
         return result
 

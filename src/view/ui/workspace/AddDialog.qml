@@ -16,10 +16,6 @@ Popup {
     property var formErrors: ({})
     property bool isFormValid: false
 
-    // Pre-filled values supplied by the caller (e.g. ViewDialog).
-    // Keys must match the entity's internal field names.
-    property var prefillData: ({})
-
     signal addClicked(var newData)
 
     anchors.centerIn: Overlay.overlay
