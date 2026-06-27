@@ -285,6 +285,8 @@ class QMLDataViewController(QObject):
         parent_id = current_data.get(repo.PARENT_FK) if repo.PARENT_FK else None
 
         for col in repo.get_columns():
+            if mode == 'add' and primary_key and col == primary_key:
+                continue
             val = current_data.get(col, '')
             try:
                 field = entity_model.from_internal_name(col)
