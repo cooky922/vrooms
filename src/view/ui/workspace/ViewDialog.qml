@@ -21,8 +21,8 @@ Popup {
     property var customerPastRents:   []
 
     anchors.centerIn: Overlay.overlay
-    width: 420
-    height: Math.min(implicitHeight, Overlay.overlay ? Overlay.overlay.height * 0.9 : 600)
+    width: 480
+    height: Overlay.overlay ? Overlay.overlay.height * 0.95 : 800
 
     modal: true
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
@@ -73,7 +73,7 @@ Popup {
         }
     }
 
-    // Navigate to a related Customer or Unit record — switches the nav tab and reopens this dialog
+    // Navigate to a related Customer or Unit record
     function openRelatedRecord(fieldKey) {
         let targetEntity = fieldKey === "customerID" ? "customer" : "unit"
         let targetId     = String(root.viewData[fieldKey] || "")
@@ -200,7 +200,7 @@ Popup {
                             }
                         }
 
-                        // "View Customer →" / "View Unit →" link (rent view only, FK fields only)
+                        // "View Customer →" / "View Unit →" link
                         RowLayout {
                             Layout.fillWidth: true
                             visible: root.entityName.toLowerCase() === "rent" && modelData.is_foreign_key === true
@@ -240,7 +240,8 @@ Popup {
                     Layout.fillWidth: true
                     visible: root.entityName.toLowerCase().indexOf("unit") >= 0
                              && root.viewData["unitStatus"] === "Rented"
-                    height: visible ? rentInfoColumn.implicitHeight + 24 : 0
+                    implicitHeight: rentInfoColumn.implicitHeight + 24
+                    height: visible ? implicitHeight : 0
                     radius: 10
                     color: "#FEF3C7"
                     border.color: "#FCD34D"
@@ -297,7 +298,8 @@ Popup {
                 Rectangle {
                     Layout.fillWidth: true
                     visible: root.entityName.toLowerCase().indexOf("customer") >= 0
-                    height: visible ? rentalsColumn.implicitHeight + 24 : 0
+                    implicitHeight: rentalsColumn.implicitHeight + 24
+                    height: visible ? implicitHeight : 0
                     radius: 10
                     color: "#EFF6FF"
                     border.color: "#93C5FD"
@@ -364,7 +366,8 @@ Popup {
                         Rectangle {
                             Layout.fillWidth: true
                             visible: root.customerActiveRent !== null
-                            height: visible ? activeRentColumn.implicitHeight + 16 : 0
+                            implicitHeight: activeRentColumn.implicitHeight + 16
+                            height: visible ? implicitHeight : 0
                             radius: 8
                             color: "#DBEAFE"
                             border.color: "#60A5FA"
@@ -421,7 +424,7 @@ Popup {
                         ColumnLayout {
                             Layout.fillWidth: true
                             visible: root.customerPastRents.length > 0
-                            spacing: 4
+                            spacing: 0
 
                             Text {
                                 text: "Past Rentals"
@@ -429,42 +432,28 @@ Popup {
                                 font.pixelSize: 10; font.bold: true
                                 color: "#1E3A8A"; opacity: 0.6
                                 Layout.topMargin: root.customerActiveRent !== null ? 4 : 0
+                                Layout.bottomMargin: 4
                             }
 
-                            GridLayout {
+                            // Header row
+                            RowLayout {
                                 Layout.fillWidth: true
-                                columns: 4; columnSpacing: 8
-
-                                Repeater {
-                                    model: ["ID", "Unit ID", "Rent Date", "Status"]
-                                    delegate: Text {
-                                        text: modelData
-                                        font.family: appTheme.rethinkSansFontName
-                                        font.pixelSize: 10; font.bold: true
-                                        color: "#1E3A8A"; opacity: 0.5
-                                        Layout.fillWidth: true
-                                    }
-                                }
+                                spacing: 0
+                                Text { text: "ID";        font.family: appTheme.rethinkSansFontName; font.pixelSize: 10; font.bold: true; color: "#1E3A8A"; opacity: 0.5; Layout.preferredWidth: 40 }
+                                Text { text: "Unit ID";   font.family: appTheme.rethinkSansFontName; font.pixelSize: 10; font.bold: true; color: "#1E3A8A"; opacity: 0.5; Layout.preferredWidth: 60 }
+                                Text { text: "Rent Date"; font.family: appTheme.rethinkSansFontName; font.pixelSize: 10; font.bold: true; color: "#1E3A8A"; opacity: 0.5; Layout.fillWidth: true }
+                                Text { text: "Status";    font.family: appTheme.rethinkSansFontName; font.pixelSize: 10; font.bold: true; color: "#1E3A8A"; opacity: 0.5; Layout.preferredWidth: 70; horizontalAlignment: Text.AlignRight }
                             }
 
                             Repeater {
                                 model: root.customerPastRents
-                                delegate: Rectangle {
+                                delegate: RowLayout {
                                     Layout.fillWidth: true
-                                    height: pastRentGrid.implicitHeight + 10
-                                    radius: 6
-                                    color: index % 2 === 0 ? "#DBEAFE" : "#EFF6FF"
-
-                                    GridLayout {
-                                        id: pastRentGrid
-                                        anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 8 }
-                                        columns: 4; columnSpacing: 8
-
-                                        Text { text: "#" + (modelData["rentID"] || "—");      font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; font.bold: true; color: "#1E3A8A"; Layout.fillWidth: true; elide: Text.ElideRight }
-                                        Text { text: modelData["unitID"] || "—";               font.family: appTheme.rethinkSansFontName; font.pixelSize: 11;                color: "#1E3A8A"; Layout.fillWidth: true; elide: Text.ElideRight }
-                                        Text { text: modelData["rentDateTime"] || "—";          font.family: appTheme.rethinkSansFontName; font.pixelSize: 11;                color: "#1E3A8A"; Layout.fillWidth: true; elide: Text.ElideRight }
-                                        Text { text: modelData["rentStatus"] || "—";            font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; font.bold: true; color: "#1E3A8A"; Layout.fillWidth: true; elide: Text.ElideRight }
-                                    }
+                                    spacing: 0
+                                    Text { text: "#" + (modelData["rentID"] || "—");       font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; font.bold: true; color: "#1E3A8A"; Layout.preferredWidth: 40;  elide: Text.ElideRight }
+                                    Text { text: modelData["unitID"] || "—";               font.family: appTheme.rethinkSansFontName; font.pixelSize: 11;                color: "#1E3A8A"; Layout.preferredWidth: 60;  elide: Text.ElideRight }
+                                    Text { text: modelData["rentDateTime"] || "—";         font.family: appTheme.rethinkSansFontName; font.pixelSize: 11;                color: "#1E3A8A"; Layout.fillWidth: true;     elide: Text.ElideRight }
+                                    Text { text: modelData["rentStatus"] || "—";           font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; font.bold: true; color: "#1E3A8A"; Layout.preferredWidth: 70; horizontalAlignment: Text.AlignRight; elide: Text.ElideRight }
                                 }
                             }
                         }
@@ -475,7 +464,8 @@ Popup {
                 Rectangle {
                     Layout.fillWidth: true
                     visible: root.entityName.toLowerCase().indexOf("customer") >= 0
-                    height: visible ? paymentsColumn.implicitHeight + 24 : 0
+                    implicitHeight: paymentsColumn.implicitHeight + 24
+                    height: visible ? implicitHeight : 0
                     radius: 10
                     color: "#F0FDF4"
                     border.color: "#86EFAC"
@@ -547,40 +537,36 @@ Popup {
                             Layout.fillWidth: true
                         }
 
-                        GridLayout {
+                        ColumnLayout {
                             visible: root.customerPayments.length > 0
                             Layout.fillWidth: true
-                            columns: 4; columnSpacing: 8
+                            spacing: 2
+
+                            // Header
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 0
+                                Text { text: "ID";     font.family: appTheme.rethinkSansFontName; font.pixelSize: 10; font.bold: true; color: "#14532D"; opacity: 0.5; Layout.preferredWidth: 40 }
+                                Text { text: "Date";   font.family: appTheme.rethinkSansFontName; font.pixelSize: 10; font.bold: true; color: "#14532D"; opacity: 0.5; Layout.fillWidth: true }
+                                Text { text: "Amount"; font.family: appTheme.rethinkSansFontName; font.pixelSize: 10; font.bold: true; color: "#14532D"; opacity: 0.5; Layout.preferredWidth: 70; horizontalAlignment: Text.AlignRight }
+                                Text { text: "Method"; font.family: appTheme.rethinkSansFontName; font.pixelSize: 10; font.bold: true; color: "#14532D"; opacity: 0.5; Layout.preferredWidth: 70; horizontalAlignment: Text.AlignRight }
+                            }
 
                             Repeater {
-                                model: ["ID", "Date", "Amount", "Method"]
-                                delegate: Text {
-                                    text: modelData
-                                    font.family: appTheme.rethinkSansFontName
-                                    font.pixelSize: 10; font.bold: true
-                                    color: "#14532D"; opacity: 0.5
+                                model: root.customerPayments
+                                delegate: Rectangle {
                                     Layout.fillWidth: true
-                                }
-                            }
-                        }
+                                    height: 28; radius: 6
+                                    color: index % 2 === 0 ? "#DCFCE7" : "#F0FDF4"
 
-                        Repeater {
-                            model: root.customerPayments
-                            delegate: Rectangle {
-                                Layout.fillWidth: true
-                                height: paymentGrid.implicitHeight + 10
-                                radius: 6
-                                color: index % 2 === 0 ? "#DCFCE7" : "#F0FDF4"
-
-                                GridLayout {
-                                    id: paymentGrid
-                                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 8 }
-                                    columns: 4; columnSpacing: 8
-
-                                    Text { text: "#" + (modelData["paymentID"] || "—");                                              font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; font.bold: true; color: "#14532D"; Layout.fillWidth: true; elide: Text.ElideRight }
-                                    Text { text: modelData["paymentDate"] || "—";                                                     font.family: appTheme.rethinkSansFontName; font.pixelSize: 11;                color: "#14532D"; Layout.fillWidth: true; elide: Text.ElideRight }
-                                    Text { text: modelData["amount"] !== undefined ? modelData["amount"] : "—";                       font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; font.bold: true; color: "#14532D"; Layout.fillWidth: true; elide: Text.ElideRight }
-                                    Text { text: modelData["paymentMethod"] || "—";                                                   font.family: appTheme.rethinkSansFontName; font.pixelSize: 11;                color: "#14532D"; Layout.fillWidth: true; elide: Text.ElideRight }
+                                    RowLayout {
+                                        anchors { fill: parent; leftMargin: 8; rightMargin: 8 }
+                                        spacing: 0
+                                        Text { text: "#" + (modelData["paymentID"] || "—");                              font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; font.bold: true; color: "#14532D"; Layout.preferredWidth: 40;                             elide: Text.ElideRight }
+                                        Text { text: modelData["paymentDate"] || "—";                                    font.family: appTheme.rethinkSansFontName; font.pixelSize: 11;                color: "#14532D"; Layout.fillWidth: true;                              elide: Text.ElideRight }
+                                        Text { text: modelData["amount"] !== undefined ? "₱" + modelData["amount"] : "—"; font.family: appTheme.rethinkSansFontName; font.pixelSize: 11; font.bold: true; color: "#14532D"; Layout.preferredWidth: 70; horizontalAlignment: Text.AlignRight; elide: Text.ElideRight }
+                                        Text { text: modelData["paymentMethod"] || "—";                                  font.family: appTheme.rethinkSansFontName; font.pixelSize: 11;                color: "#14532D"; Layout.preferredWidth: 70; horizontalAlignment: Text.AlignRight; elide: Text.ElideRight }
+                                    }
                                 }
                             }
                         }
@@ -591,7 +577,8 @@ Popup {
                 Rectangle {
                     Layout.fillWidth: true
                     visible: root.entityName.toLowerCase().indexOf("customer") >= 0
-                    height: visible ? liabilitiesColumn.implicitHeight + 24 : 0
+                    implicitHeight: liabilitiesColumn.implicitHeight + 24
+                    height: visible ? implicitHeight : 0
                     radius: 10
                     color: "#FFF7ED"
                     border.color: "#FDBA74"
@@ -702,7 +689,6 @@ Popup {
                         }
                     }
                 }
-
             }
         }
 
@@ -711,7 +697,6 @@ Popup {
             Layout.fillWidth: true
             spacing: 8
 
-            // "Create Rent" button — only for Available units
             Components.PrimaryButton {
                 text: "Create Rent"
                 Layout.preferredHeight: 32
@@ -726,7 +711,6 @@ Popup {
                 }
             }
 
-            // "Return Unit" button — only for Ongoing rents
             Components.PrimaryButton {
                 text: "Return Unit"
                 Layout.preferredHeight: 32
@@ -739,7 +723,6 @@ Popup {
                 }
             }
 
-            // "Add Payment" button — always shown on rent view
             Components.SecondaryButton {
                 text: "Add Payment"
                 Layout.preferredHeight: 32
@@ -752,7 +735,6 @@ Popup {
                 }
             }
 
-            // "Pay" button — only for Pending liabilities
             Components.PrimaryButton {
                 text: "Pay"
                 Layout.preferredHeight: 32
